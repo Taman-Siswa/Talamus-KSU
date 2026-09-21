@@ -1,0 +1,31 @@
+/* Sign-in layout modelled on the Talamus FE: large logo, display headline, one card. */
+.wrap { width: min(520px, 100%); }
+.logo { height: 28px; width: auto; display: block; }
+.logoDark { display: none; }
+:global([data-theme='dark']) .logoLight { display: none; }
+:global([data-theme='dark']) .logoDark { display: block; }
+.jargon { font: 700 40px/1.15 var(--font-display); letter-spacing: -0.018em; color: var(--ink); margin: 24px 0 12px; max-width: 16ch; }
+.jargon em { font-style: italic; color: var(--link); }
+.intro { font: 400 17px/1.5 var(--font-text); color: var(--sub); margin: 0 0 28px; max-width: 46ch; }
+.card { background: var(--card); border: 1px solid var(--hair-soft); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { font: 700 12px/1.4 var(--font-text); letter-spacing: 0.075em; text-transform: uppercase; color: var(--sub); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.label { font: 500 14px/1.4 var(--font-text); color: var(--ink); }
+.hint { font: 400 13px/1.4 var(--font-text); color: var(--sub); }
+.inputWrap { position: relative; }
+.input { width: 100%; background: var(--card); border: 1px solid var(--hair); border-radius: var(--r-sm); padding: 12px 14px; color: var(--ink); font: 400 16px/1.4 var(--font-text); outline: none; transition: border-color .15s ease-out, box-shadow .15s ease-out; }
+.input:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
+.inputPw { padding-right: 48px; }
+.eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: var(--r-pill); background: transparent; border: 0; color: var(--sub); display: grid; place-items: center; cursor: pointer; transition: background-color .15s ease-out, color .15s ease-out; }
+.eye:hover { background: var(--chip); color: var(--accent); }
+.error { display: flex; gap: 12px; align-items: flex-start; background: var(--warn-bg); color: var(--warn-ink); font: 400 15px/1.5 var(--font-text); padding: 12px 16px; border-radius: var(--r-md); }
+.submit { display: inline-flex; justify-content: center; border: 1px solid var(--cta-bg); cursor: pointer; background: var(--cta-bg); color: var(--cta-ink); font: 500 16px/1.2 var(--font-text); padding: 14px 28px; border-radius: var(--r-pill); transition: filter .15s ease-out; }
+.submit:hover { filter: brightness(0.92); }
+.submit:disabled { opacity: .5; cursor: not-allowed; }
+.alt { font: 400 14px/1.5 var(--font-text); color: var(--sub); text-align: center; margin: 0; }
+.alt a { font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.demo { font: 400 14px/1.5 var(--font-text); color: var(--sub); margin: 16px 0 0; }
+
+@media (max-width: 860px) {
+  .jargon { font-size: 30px; }
+}

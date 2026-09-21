@@ -1,0 +1,80 @@
+/* Page frame modelled on the Talamus FE shell: brand block on top of the sidebar, pill nav,
+   account block in the foot; content column with generous padding. */
+/* No max-width here: the sidebar must stay flush with the left edge on wide screens. */
+.root { display: flex; min-height: 100vh; background: var(--bg); color: var(--ink); }
+
+.scrim { display: none; }
+
+.sidebar {
+  width: var(--sidebar-w); flex: none; background: var(--side);
+  border-right: 1px solid var(--hair-soft); position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column; padding: 24px 16px 16px; gap: 4px;
+  z-index: 100; transition: width 160ms ease-out;
+}
+
+.brandRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin: 4px 0 20px 12px; }
+.brand { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; }
+.brandmark { height: 20px; width: auto; flex: none; display: block; }
+.role { font-size: 12px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.075em; line-height: 1.3; }
+
+.logoDark { display: none; }
+:global([data-theme='dark']) .logoLight { display: none; }
+:global([data-theme='dark']) .logoDark { display: block; }
+
+.iconBtn {
+  width: 36px; height: 36px; border-radius: var(--r-pill); background: transparent; border: 0;
+  color: var(--sub); display: grid; place-items: center; cursor: pointer; flex: none; padding: 0;
+  transition: background-color .15s ease-out, color .15s ease-out;
+}
+.iconBtn:hover { background: var(--chip); color: var(--accent); }
+/* Only needed inside the mobile drawer (closes it); hidden on desktop. */
+.collapse { display: none; margin-top: -8px; }
+
+.scroll { overflow-y: auto; flex: 1; margin: 0 -4px; padding: 0 4px; display: flex; flex-direction: column; gap: 4px; }
+
+.nav {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r-pill);
+  color: var(--nav-ink); text-decoration: none; cursor: pointer; border: 0; background: transparent;
+  width: 100%; text-align: left; font: 500 15px/1.5 var(--font-text);
+  transition: background-color .15s ease-out, color .15s ease-out;
+}
+.nav:hover { background: var(--nav-wash); color: var(--nav-sel-ink); }
+.navActive, .navActive:hover { background: var(--nav-sel); color: var(--nav-sel-ink); font-weight: 700; }
+.label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.foot { border-top: 1px solid var(--hair-soft); padding-top: 12px; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.acct { gap: 12px; margin-top: 4px; padding: 8px 12px; min-width: 0; border-radius: var(--r-md); }
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: var(--brand-bg); color: var(--brand-ink);
+  font: 700 15px/1 var(--font-display);
+}
+.who { min-width: 0; flex: 1; }
+.name { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta { font-size: 13px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.top { width: 100%; max-width: 1040px; margin: 0 auto; padding: 32px 48px 0; display: flex; align-items: center; min-height: 28px; }
+.burger { display: none; }
+.content { width: 100%; max-width: 1040px; margin: 0 auto; padding: 16px 48px 96px; }
+
+/* ---------- Auth pages (no sidebar) ---------- */
+.authRoot { min-height: 100vh; background: var(--bg); color: var(--ink); display: grid; place-items: center; padding: 32px 16px; }
+
+/* The sidebar becomes a drawer. */
+@media (max-width: 860px) {
+  .collapse { display: grid; }
+  .sidebar {
+    position: fixed; inset: 0 auto 0 0; width: var(--sidebar-w); padding: 24px 16px 16px;
+    transform: translateX(-100%); transition: transform .18s ease-out; box-shadow: var(--shadow-pop);
+  }
+  .sidebar.open { transform: none; }
+  .scrim { display: block; position: fixed; inset: 0; z-index: 99; background: var(--scrim); }
+  .burger { display: grid; margin-left: -8px; }
+  .top { padding: 16px 16px 0; }
+  .content { padding: 8px 16px 96px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .nav, .iconBtn { transition-duration: 0s; }
+}
