@@ -36,6 +36,8 @@
 .btnPrimary { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-ink); }
 .btnPrimary:hover { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-ink); filter: brightness(0.92); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+.btnDanger { border-color: var(--warn-ink); color: var(--warn-ink); }
+.btnDanger:hover { background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink); }
 .btn:disabled:hover { background: transparent; border-color: var(--hair); color: var(--ink); }
 
 /* ---------- sections ---------- */

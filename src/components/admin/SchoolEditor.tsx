@@ -55,7 +55,7 @@ const autoPill = (i: SchoolInfo) => [i.kind, i.boarding, i.province].filter(Bool
  */
 export default function SchoolEditor({ school, published, savedDraft }: { school: School; published: boolean; savedDraft: School | null }) {
   const router = useRouter();
-  const { save, saveDraft, discardDraft, reset } = useSchoolsStore.getState();
+  const { save, saveDraft, discardDraft, reset, remove } = useSchoolsStore.getState();
   const isEdited = useSchoolsStore(s => !!s.overrides[school.id]);
   const base = savedDraft ?? school;
   const [draft, setDraft] = useState<School>(base);
@@ -124,6 +124,12 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
   const onSaveDraft = () => store('draft', draft);
   // A stage with one date is a single day.
   const onSave = () => store('publish', { ...draft, phases: draft.phases.map(p => ({ ...p, e: p.e || p.s })) });
+
+  const onDelete = () => {
+    if (!window.confirm(`Hapus "${draft.name || draft.short || 'sekolah ini'}" untuk selamanya? Siswa yang menjadikannya target akan kehilangan checklist dan datanya untuk sekolah ini.`)) return;
+    remove(school.id);
+    router.replace('/admin/sekolah');
+  };
 
   const onDiscardDraft = () => {
     discardDraft(school.id);
@@ -404,6 +410,11 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
         {isEdited && !savedDraft ? (
           <button type="button" className={css.btn} onClick={onReset}>
             <Icon name="reset" size={16} />Kembalikan ke data bawaan
+          </button>
+        ) : null}
+        {!isBundledSchool(school.id) && published ? (
+          <button type="button" className={[css.btn, css.btnDanger].join(' ')} onClick={onDelete}>
+            <Icon name="trash" size={16} />Hapus sekolah
           </button>
         ) : null}
         {saved && !dirty ? (

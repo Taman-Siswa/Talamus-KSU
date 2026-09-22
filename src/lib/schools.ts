@@ -25,6 +25,8 @@ interface SchoolsState {
   saveDraft: (school: School) => void;
   discardDraft: (id: SchoolId) => void;
   reset: (id: SchoolId) => void;
+  /** Only schools the admin created can be removed; the 5 bundled ones are baked into the app. */
+  remove: (id: SchoolId) => void;
 }
 
 export const isBundledSchool = (id: SchoolId) => SCHOOLS.some(s => s.id === id);
@@ -95,6 +97,12 @@ export const useSchoolsStore = create<SchoolsState>()(
         const overrides = { ...get().overrides };
         delete overrides[id];
         set({ overrides });
+      },
+      remove: id => {
+        if (isBundledSchool(id)) return;
+        const drafts = { ...get().drafts };
+        delete drafts[id];
+        set({ drafts, added: get().added.filter(a => a.id !== id) });
       },
     }),
     {

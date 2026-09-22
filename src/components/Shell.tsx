@@ -30,6 +30,21 @@ const AUTH_PAGES = ['/login', '/daftar'];
 const isAdminPath = (p: string) => p === '/admin' || p.startsWith('/admin/');
 // Pages both roles can open. Everything else belongs to one side only.
 const SHARED_PAGES = ['/profil'];
+// Admins may also open every student page, as a preview: the school data is shared per browser, and
+// the admin account keeps its own student-side progress (targets, checks, grades) apart from any student.
+const isStudentPath = (p: string) => !isAdminPath(p) && !AUTH_PAGES.includes(p) && !SHARED_PAGES.includes(p);
+const PREVIEW_LABEL = 'Pratinjau tampilan siswa';
+
+function NavLink({ item: n, pathname, onClick }: { item: NavItem; pathname: string; onClick: () => void }) {
+  const active = pathname === n.href || pathname.startsWith(n.href + '/');
+  return (
+    <Link href={n.href} onClick={onClick} title={n.label} aria-current={active ? 'page' : undefined}
+      className={[css.nav, active ? css.navActive : ''].join(' ')}>
+      <Icon name={n.icon} />
+      <span className={css.label}>{n.label}</span>
+    </Link>
+  );
+}
 
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -57,7 +72,8 @@ export default function Shell({ children }: { children: ReactNode }) {
   }, [authHydrated, session]);
 
   // Route guard: signed-out users only see the auth pages, and each role stays on its own side.
-  const wrongSide = !!session && !SHARED_PAGES.includes(pathname) && (role === 'admin') !== isAdminPath(pathname);
+  const wrongSide = !!session && !SHARED_PAGES.includes(pathname) && role !== 'admin' && isAdminPath(pathname);
+  const previewing = role === 'admin' && isStudentPath(pathname);
   useEffect(() => {
     if (!authHydrated) return;
     if (!session) {
@@ -110,16 +126,13 @@ export default function Shell({ children }: { children: ReactNode }) {
           </button>
         </div>
         <nav className={css.scroll}>
-          {NAV[role].map(n => {
-            const active = pathname === n.href || pathname.startsWith(n.href + '/');
-            return (
-              <Link key={n.href} href={n.href} onClick={close} title={n.label} aria-current={active ? 'page' : undefined}
-                className={[css.nav, active ? css.navActive : ''].join(' ')}>
-                <Icon name={n.icon} />
-                <span className={css.label}>{n.label}</span>
-              </Link>
-            );
-          })}
+          {NAV[role].map(n => <NavLink key={n.href} item={n} pathname={pathname} onClick={close} />)}
+          {role === 'admin' ? (
+            <>
+              <div className={css.navGroup}><Icon name="eye" size={14} />{PREVIEW_LABEL}</div>
+              {NAV.siswa.map(n => <NavLink key={n.href} item={n} pathname={pathname} onClick={close} />)}
+            </>
+          ) : null}
         </nav>
         <div className={css.foot}>
           {/* Label and icon show the current mode; clicking switches to the other one. */}
@@ -150,6 +163,12 @@ export default function Shell({ children }: { children: ReactNode }) {
           </button>
         </header>
         {/* Saved state, school data and "today" only exist in the browser, so pages render after hydration. */}
+        {previewing ? (
+          <div className={css.previewBar} role="note">
+            <Icon name="eye" size={16} />
+            <span>{PREVIEW_LABEL}. Yang tampil adalah data yang sudah disimpan, bukan draft. Target dan centang di sini milik akun admin, bukan siswa.</span>
+          </div>
+        ) : null}
         <div className={css.content}>{hydrated && schoolsHydrated ? children : null}</div>
       </main>
     </div>

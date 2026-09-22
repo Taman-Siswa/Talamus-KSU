@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# firebase
+.firebase/
+*-debug.log
+
+# firebase CLI's bundled agent skills (not part of the app)
+/.claude/
+/.agents/
+skills-lock.json

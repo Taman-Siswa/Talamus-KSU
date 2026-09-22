@@ -1,0 +1,30 @@
+name: Preview on Firebase Hosting (pull request)
+
+# Every pull request gets its own temporary preview URL, posted as a comment on the PR.
+# The live site is not touched. Previews expire on their own (7 days by default).
+on: pull_request
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  build_and_preview:
+    # Pull requests from forks cannot read repository secrets, so they are skipped.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build:firebase
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KSU_TAMANSCHOOL }}
+          projectId: ksu-tamanschool
