@@ -31,11 +31,11 @@ export const SCHOOLS: School[] = [
     ],
     checklist: [
       { id: 'akun', l: 'Buat akun casis di pensisru.tarunanusantara.id', d: '20 Sep 2026', dl: '2026-09-20', f: [{ k: 'email', p: 'Email aktif' }, { k: 'pass', p: 'Password akun (tersimpan di perangkat ini saja)' }] },
-      { id: 'rapor', l: 'Foto rapor sem 1\u20134 yang sudah dilegalisir', d: '20 Sep 2026', dl: '2026-09-20', note: 'Nilai pengetahuan B.Indo, B.Ing, Matematika, IPA', up: true },
-      { id: 'surat', l: 'Surat pernyataan kepsek, ortu, dan casis', d: '21 Sep 2026', dl: '2026-09-21', note: 'Format resmi: bit.ly/PersyaratanPensisruSMATN', up: true },
-      { id: 'sehat', l: 'Surat keterangan sehat dari dokter', d: '21 Sep 2026', dl: '2026-09-21', up: true },
-      { id: 'iq', l: 'Opsional: tes IQ \u2265 110 (HIMPSI) & TOEFL sebagai nilai tambah', d: '21 Sep 2026', dl: '2026-09-21', up: true },
-      { id: 'prestasi', l: 'Scan sertifikat prestasi (wajib untuk jalur prestasi)', d: '21 Sep 2026', dl: '2026-09-21', up: true },
+      { id: 'rapor', l: 'Foto rapor sem 1\u20134 yang sudah dilegalisir', d: '20 Sep 2026', dl: '2026-09-20', note: 'Nilai pengetahuan B.Indo, B.Ing, Matematika, IPA' },
+      { id: 'surat', l: 'Surat pernyataan kepsek, ortu, dan casis', d: '21 Sep 2026', dl: '2026-09-21', note: 'Format resmi: bit.ly/PersyaratanPensisruSMATN' },
+      { id: 'sehat', l: 'Surat keterangan sehat dari dokter', d: '21 Sep 2026', dl: '2026-09-21' },
+      { id: 'iq', l: 'Opsional: tes IQ \u2265 110 (HIMPSI) & TOEFL sebagai nilai tambah', d: '21 Sep 2026', dl: '2026-09-21' },
+      { id: 'prestasi', l: 'Scan sertifikat prestasi (wajib untuk jalur prestasi)', d: '21 Sep 2026', dl: '2026-09-21' },
       { id: 'submit', l: 'Submit pendaftaran sebelum ditutup', d: '23 Sep 2026', dl: '2026-09-23' },
       { id: 'tes', l: 'Siapkan perangkat & koneksi untuk tes akademik online', d: 'Okt 2026', dl: '2026-10-12' }
     ],
@@ -82,7 +82,7 @@ export const SCHOOLS: School[] = [
     checklist: [
       { id: 'pantau', l: 'Pantau rilis SPMB 2027/28 di schools.kaderbangsa.foundation', d: 'Okt 2026', dl: '2026-10-26' },
       { id: 'akun', l: 'Buat satu akun & isi formulir dengan data valid', d: 'Nov 2026', dl: '2026-11-15', note: 'Akun ganda otomatis ditolak sistem', f: [{ k: 'email', p: 'Email akun' }, { k: 'pass', p: 'Password akun (tersimpan di perangkat ini saja)' }] },
-      { id: 'rapor', l: 'Siapkan scan rapor \u2014 isi jujur, data fiktif = diskualifikasi', d: 'Nov 2026', dl: '2026-11-20', up: true },
+      { id: 'rapor', l: 'Siapkan scan rapor \u2014 isi jujur, data fiktif = diskualifikasi', d: 'Nov 2026', dl: '2026-11-20' },
       { id: 'submit', l: 'Submit sebelum penutupan', d: '\u00b129 Nov 2026', dl: '2026-11-29' },
       { id: 'to1', l: 'Ikut Try Out 1 (wajib hadir, tidak dinilai)', d: '\u00b119 Des 2026', dl: '2026-12-19' },
       { id: 'nst1', l: 'NST Tahap I \u2014 latihan TPA & logika', d: '\u00b1Jan 2027', dl: '2027-01-09' },
@@ -126,11 +126,11 @@ export const SCHOOLS: School[] = [
       { l: 'Pengumuman', s: '2027-03-26', e: '2027-03-28', t: 'umum', est: true }
     ],
     checklist: [
-      { id: 'iq', l: 'Tes IQ di biro psikologi anggota HIMPSI (target \u2265 115)', d: 'Nov 2026', dl: '2026-11-30', note: 'Sertifikat berlaku 6 bulan \u2014 jangan tes terlalu awal', up: true },
+      { id: 'iq', l: 'Tes IQ di biro psikologi anggota HIMPSI (target \u2265 115)', d: 'Nov 2026', dl: '2026-11-30', note: 'Sertifikat berlaku 6 bulan \u2014 jangan tes terlalu awal' },
       { id: 'nilai', l: 'Jaga rata-rata B.Ing / Matematika / IPA \u2265 90 s.d. sem 1 kls IX', d: 'Des 2026', dl: '2026-12-15' },
       { id: 'jalur', l: 'Tentukan jalur: beasiswa / B2P / mandiri', d: 'Des 2026', dl: '2026-12-20', note: 'Beasiswa & B2P butuh dokumen ekonomi tambahan' },
       { id: 'akun', l: 'Registrasi di admission.praditadirgantara.sch.id', d: 'Des 2026', dl: '2026-12-05', f: [{ k: 'email', p: 'Email akun' }, { k: 'pass', p: 'Password akun (tersimpan di perangkat ini saja)' }] },
-      { id: 'rapor', l: 'Legalisir rapor semester 1\u20135', d: 'Jan 2027', dl: '2027-01-10', up: true },
+      { id: 'rapor', l: 'Legalisir rapor semester 1\u20135', d: 'Jan 2027', dl: '2027-01-10' },
       { id: 'submit', l: 'Submit sebelum penutupan', d: '\u00b117 Jan 2027', dl: '2027-01-17' },
       { id: 'daerah', l: 'Ikut seleksi daerah di Lanud terdekat', d: '\u00b1Feb 2027', dl: '2027-02-08' }
     ],
@@ -175,13 +175,13 @@ export const SCHOOLS: School[] = [
       { l: 'Daftar ulang + kirim berkas + wawancara murid & ortu', s: '2027-02-23', e: '2027-02-26', t: 'tes', est: true }
     ],
     checklist: [
-      { id: 'kk', l: 'Pastikan KK DKI Jakarta atas nama anak terbit ≥ 1 tahun sebelum pendaftaran', d: 'Cek sekarang', dl: '2026-12-31', note: 'Dokumen · 2026/27: KK terbit paling lambat 1 Feb 2025', up: true },
-      { id: 'rapor', l: 'Legalisir rapor kelas 7 (sem 1–2), 8 (sem 1–2), 9 (sem 1) — minta konversi predikat huruf → angka ke sekolah asal', d: 'Jan 2027', dl: '2027-01-31', note: 'Dokumen · rata-rata Mat/IPA/B.Inggris masing-masing ≥ 90', up: true },
-      { id: 'rekom', l: 'Surat rekomendasi Kepala Sekolah asal (format diunduh di laman SPMB, dikirim kolektif)', d: 'Jan 2027', dl: '2027-01-31', note: 'Dokumen · wajib semua jalur', up: true },
-      { id: 'berkas', l: 'Siapkan akta kelahiran, NISN, dan pas foto', d: 'Jan 2027', dl: '2027-01-31', note: 'Dokumen', f: [{ k: 'nisn', p: 'NISN (10 digit)' }], up: true },
+      { id: 'kk', l: 'Pastikan KK DKI Jakarta atas nama anak terbit ≥ 1 tahun sebelum pendaftaran', d: 'Cek sekarang', dl: '2026-12-31', note: 'Dokumen · 2026/27: KK terbit paling lambat 1 Feb 2025' },
+      { id: 'rapor', l: 'Legalisir rapor kelas 7 (sem 1–2), 8 (sem 1–2), 9 (sem 1) — minta konversi predikat huruf → angka ke sekolah asal', d: 'Jan 2027', dl: '2027-01-31', note: 'Dokumen · rata-rata Mat/IPA/B.Inggris masing-masing ≥ 90' },
+      { id: 'rekom', l: 'Surat rekomendasi Kepala Sekolah asal (format diunduh di laman SPMB, dikirim kolektif)', d: 'Jan 2027', dl: '2027-01-31', note: 'Dokumen · wajib semua jalur' },
+      { id: 'berkas', l: 'Siapkan akta kelahiran, NISN, dan pas foto', d: 'Jan 2027', dl: '2027-01-31', note: 'Dokumen', f: [{ k: 'nisn', p: 'NISN (10 digit)' }] },
       { id: 'akun', l: 'Registrasi akun di spmbsmanumht.jakarta.go.id — simpan password!', d: '±2 Feb 2027', dl: '2027-02-02', note: 'Administrasi · 2026/27: pendaftaran 2–5 Feb, tutup pk 14.00', f: [{ k: 'user', p: 'NISN / username akun' }, { k: 'pass', p: 'Password akun (tersimpan di perangkat ini saja)' }] },
-      { id: 'prestasi', l: 'Jalur Prestasi: sertifikat ASLI medali OSN/OPSI/ITMO/IJSO', d: 'Feb 2027', dl: '2027-02-02', note: 'Dokumen · kuota ±8 murid', up: true },
-      { id: 'afirmasi', l: 'Jalur Afirmasi: KJP Plus aktif tahap II / PIP + terdaftar DTKS', d: 'Feb 2027', dl: '2027-02-02', note: 'Dokumen · kuota ±44 murid', up: true },
+      { id: 'prestasi', l: 'Jalur Prestasi: sertifikat ASLI medali OSN/OPSI/ITMO/IJSO', d: 'Feb 2027', dl: '2027-02-02', note: 'Dokumen · kuota ±8 murid' },
+      { id: 'afirmasi', l: 'Jalur Afirmasi: KJP Plus aktif tahap II / PIP + terdaftar DTKS', d: 'Feb 2027', dl: '2027-02-02', note: 'Dokumen · kuota ±44 murid' },
       { id: 'verif', l: 'Verifikasi berkas & ambil kartu peserta (datang langsung, 08.00–15.00)', d: '±2–6 Feb 2027', dl: '2027-02-02', note: 'Wajib hadir · 2026/27: 2–6 Feb' },
       { id: 'simul', l: 'Ikut Simulasi Tes Akademik', d: '±13 Feb 2027', dl: '2027-02-12', note: 'Wajib hadir · 2026/27: 13 Feb' },
       { id: 'tes', l: 'TES AKADEMIK — persiapan Mat, IPA, B. Inggris, Skolastik', d: '±20 Feb 2027', dl: '2027-02-20', note: 'Wajib hadir · 2026/27: Sabtu 21 Feb, 07.00–12.00' },
@@ -228,7 +228,7 @@ export const SCHOOLS: School[] = [
     checklist: [
       { id: 'kontak', l: 'Konfirmasi jadwal & syarat PSB 2027/28 ke admisi Wardaya', d: 'Des 2026', dl: '2026-12-01', note: 'Tugas tim TamanSchool \u2014 update halaman ini setelahnya' },
       { id: 'nilai', l: 'Jaga rata-rata Matematika & IPA (ref. \u2265 85)', d: 'Des 2026', dl: '2026-12-15' },
-      { id: 'rapor', l: 'Legalisir rapor kelas 7\u20139', d: 'Jan 2027', dl: '2027-01-05', up: true },
+      { id: 'rapor', l: 'Legalisir rapor kelas 7\u20139', d: 'Jan 2027', dl: '2027-01-05' },
       { id: 'daftar', l: 'Daftar gelombang 1', d: '\u00b1Jan 2027', dl: '2027-01-10' },
       { id: 'tes', l: 'Latihan soal Matematika & IPA level olimpiade', d: '\u00b1Feb 2027', dl: '2027-02-06' }
     ],

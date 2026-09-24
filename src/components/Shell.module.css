@@ -1,5 +1,5 @@
-/* Page frame modelled on the Talamus FE shell: brand block on top of the sidebar, pill nav,
-   account block in the foot; content column with generous padding. */
+/* Page frame. Admin pages follow "Design system v2" (logo on top of the sidebar, pill nav, account block in the foot);
+   student pages follow "Design system v2 Murid" (account on top, logo at the top right of the content). */
 /* No max-width here: the sidebar must stay flush with the left edge on wide screens. */
 .root { display: flex; min-height: 100vh; background: var(--bg); color: var(--ink); }
 
@@ -8,12 +8,13 @@
 .sidebar {
   width: var(--sidebar-w); flex: none; background: var(--side);
   border-right: 1px solid var(--hair-soft); position: sticky; top: 0; height: 100vh;
-  display: flex; flex-direction: column; padding: 24px 16px 16px; gap: 4px;
+  display: flex; flex-direction: column; padding: 24px 12px 16px; gap: 4px;
   z-index: 100; transition: width 160ms ease-out;
 }
 
-.brandRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin: 4px 0 20px 12px; }
-.brand { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; }
+/* Logo and role label sit flush left above the nav, as in "Design system v2". */
+.brandRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px 16px; margin-bottom: 8px; }
+.brand { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding-left: 8px; }
 .brandmark { height: 20px; width: auto; flex: none; display: block; }
 .role { font-size: 12px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.075em; line-height: 1.3; }
 
@@ -27,8 +28,6 @@
   transition: background-color .15s ease-out, color .15s ease-out;
 }
 .iconBtn:hover { background: var(--chip); color: var(--accent); }
-/* Only needed inside the mobile drawer (closes it); hidden on desktop. */
-.collapse { display: none; margin-top: -8px; }
 
 .scroll { overflow-y: auto; flex: 1; margin: 0 -4px; padding: 0 4px; display: flex; flex-direction: column; gap: 4px; }
 
@@ -45,9 +44,10 @@
 
 .foot { border-top: 1px solid var(--hair-soft); padding-top: 12px; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
 .acct { gap: 12px; margin-top: 4px; padding: 8px 12px; min-width: 0; border-radius: var(--r-md); }
+.acct:hover, .acctActive { background: var(--nav-wash); color: inherit; }
 .avatar {
   width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none;
-  background: var(--brand-bg); color: var(--brand-ink);
+  background: var(--av-bg); color: var(--av-ink);
   font: 700 15px/1 var(--font-display);
 }
 .who { min-width: 0; flex: 1; }
@@ -55,21 +55,65 @@
 .meta { font-size: 13px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.top { width: 100%; max-width: 1040px; margin: 0 auto; padding: 32px 48px 0; display: flex; align-items: center; min-height: 28px; }
+/* The top row only exists on mobile, for the burger; on desktop the page starts 32px from the top. */
+.top { display: none; }
 .burger { display: none; }
 .previewBar {
-  width: 100%; max-width: 1040px; margin: 16px auto -4px; padding: 0 48px; display: flex; align-items: flex-start; gap: 10px;
+  width: 100%; max-width: 1040px; margin: 32px auto -16px; padding: 0 48px; display: flex; align-items: flex-start; gap: 10px;
   font: 500 13px/1.5 var(--font-text); color: var(--nav-sel-ink);
 }
 .previewBar > svg { flex: none; margin-top: 2px; }
-.content { width: 100%; max-width: 1040px; margin: 0 auto; padding: 16px 48px 96px; }
+.content { width: 100%; max-width: 1040px; margin: 0 auto; padding: 32px 48px 96px; }
+
+/* Admin pages keep the admin type ("Design system v2"); ui.module.css reads these on the shared Profil page. */
+.adminMain { --ui-text: var(--font-text); --ui-display: var(--font-display); }
+
+/* ---------- Student frame ("Design system v2 Murid"), also used when an admin previews student pages ---------- */
+.stMain { font: 400 15px/1.5 var(--font-sys); }
+.stTop {
+  width: 100%; max-width: 1020px; margin: 0 auto 18px; padding: 26px 34px 0;
+  display: flex; align-items: center; justify-content: space-between; min-height: 58px;
+}
+.stLogo { display: flex; margin-left: auto; }
+.stLogo .brandmark { height: 18px; opacity: 0.85; }
+.stMain .previewBar { max-width: 1020px; padding: 0 34px; margin: -4px auto 18px; }
+.stMain .content { max-width: 1020px; padding: 0 34px 90px; }
+
+/* Student sidebar: account on top, flat 10px-radius nav, mode toggle at the bottom. */
+.student .sidebar { width: 240px; padding: 20px 10px; gap: 3px; border-right-color: var(--hair); font-family: var(--font-sys); }
+.stHead { display: flex; align-items: center; gap: 10px; padding: 4px 4px 14px; border-bottom: 1px solid var(--hair); margin-bottom: 10px; }
+.stWho, .stWho:hover { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; color: inherit; border-radius: 10px; }
+.stAvatar {
+  width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  background: var(--av-bg); color: var(--av-ink); font: 700 13px/1 var(--font-sys);
+}
+.stName { font: 600 13px/1.25 var(--font-sys); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stWhoOn .stName { color: var(--nav-sel-ink); }
+/* not clipped: like the design, a slightly long line may run into the gap before the menu button */
+.stMeta { font: 400 11px/1.3 var(--font-sys); color: var(--sub); white-space: nowrap; }
+.student .iconBtn { width: auto; height: auto; padding: 6px; border-radius: 8px; }
+.student .iconBtn:hover { color: var(--sub); }
+.student .scroll { gap: 3px; }
+.student .nav { gap: 11px; padding: 10px 12px; border-radius: 10px; font: 500 14px/1 var(--font-sys); color: var(--sub); }
+.student .nav:hover { background: var(--nav-wash); color: var(--ink); }
+.student .navActive, .student .navActive:hover { background: var(--nav-sel); color: var(--nav-sel-ink); font-weight: 500; }
+
+/* Desktop icon rail (68px admin, 70px student): labels hidden, the menu button alone at the top. */
+@media (min-width: 861px) {
+  .mini .sidebar { width: 68px; }
+  .student.mini .sidebar { width: 70px; }
+  .mini .brandRow, .mini .stHead { flex-direction: column; justify-content: center; }
+  .mini .stWho { flex: none; }
+  .mini .brand, .mini .label, .mini .navGroup, .mini .who { display: none; }
+  .mini .nav { justify-content: center; }
+  .mini .acct { padding: 8px 0; }
+}
 
 /* ---------- Auth pages (no sidebar) ---------- */
 .authRoot { min-height: 100vh; background: var(--bg); color: var(--ink); display: grid; place-items: center; padding: 32px 16px; }
 
 /* The sidebar becomes a drawer. */
 @media (max-width: 860px) {
-  .collapse { display: grid; }
   .sidebar {
     position: fixed; inset: 0 auto 0 0; width: var(--sidebar-w); padding: 24px 16px 16px;
     transform: translateX(-100%); transition: transform .18s ease-out; box-shadow: var(--shadow-pop);
@@ -77,9 +121,13 @@
   .sidebar.open { transform: none; }
   .scrim { display: block; position: fixed; inset: 0; z-index: 99; background: var(--scrim); }
   .burger { display: grid; margin-left: -8px; }
-  .top { padding: 16px 16px 0; }
-  .previewBar { padding: 0 16px; }
+  .top { display: flex; align-items: center; padding: 16px 16px 0; }
+  .previewBar { margin: 16px auto -4px; padding: 0 16px; }
   .content { padding: 8px 16px 96px; }
+  .student .sidebar { width: 250px; }
+  .stTop { padding: 16px 16px 0; min-height: 0; margin-bottom: 14px; }
+  .stMain .previewBar { padding: 0 16px; margin: 0 auto 14px; }
+  .stMain .content { padding: 0 16px 90px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

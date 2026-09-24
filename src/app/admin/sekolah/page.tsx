@@ -16,7 +16,7 @@ export default function AdminSchoolsPage() {
     <div>
       <h1 className={ui.h1}>Data SMA</h1>
       <p className={[ui.lead, ui.leadWide].join(' ')}>
-        Semua yang dibaca siswa di Checklist, Kalkulator, Timeline, Katalog, dan FAQ diatur dari satu halaman per sekolah.
+        Semua yang dibaca siswa diatur dari satu halaman.
       </p>
       <div className={css.listActions}>
         <Link href="/admin/sekolah/baru" className={[css.btn, css.btnPrimary].join(' ')}>

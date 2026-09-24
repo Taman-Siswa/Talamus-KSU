@@ -1,22 +1,22 @@
-/* Theme tokens — Talamus FE neutrals with the prototype's blue accents. All colors go through these variables. */
+/* Theme tokens — the neutral blue skin from the design reference ("Design system/Dashboard Persiapan SMA Unggulan.dc.html",
+   the T object in its logic class). All colors go through these variables. */
 :root {
-  /* Neutrals match the Talamus FE light theme (beige canvas, warm hairlines); accents stay blue. */
-  --bg: #FFFBF2;
-  --side: #FFFEFC;
+  --bg: #F7F7F5;
+  --side: #FFFFFF;
   --card: #FFFFFF;
-  --card-hover: #FFFEFC;
-  --hair: #D8D4CE;
-  --hair-soft: #EBE7E0;
+  --card-hover: #FAFAF8;
+  --hair: #ECECEA;
+  --hair-soft: #F1F1EF;
   --ink: #333333;
   --sub: #797878;
   --faint: #ACAAAA;
-  --chip: #F2EEE8;
-  --track: #EBE7E0;
+  --chip: #F1F1EF;
+  --track: #ECECEA;
   --accent: #164D74;
   --link: #2E7CB8;
   --link-hover: #164D74;
-  --nav-ink: #1A5A88;  /* sidebar text: blue counterpart of Talamus' --ts-green-nav */
-  --nav-wash: #F4F9FD; /* sidebar hover */
+  --nav-ink: #797878;  /* sidebar text (inactive) */
+  --nav-wash: #F1F1EF; /* sidebar hover */
   --nav-sel: #EAF4FB;
   --nav-sel-ink: #164D74;
   --brand-bg: #EAF4FB;
@@ -38,6 +38,12 @@
   --font-display: var(--font-satoshi), "Satoshi", "Segoe UI", system-ui, sans-serif;
   --font-text: var(--font-redhat), "Red Hat Text", system-ui, sans-serif;
   --font-ui: var(--font-inter), "Inter", system-ui, sans-serif; /* numbers, tabular */
+  /* Student side ("Design system v2 Murid") uses the platform's own font. */
+  --font-sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-sys-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  /* ui.module.css reads these; Shell switches them to the admin type on admin-only pages. */
+  --ui-text: var(--font-sys);
+  --ui-display: var(--font-sys-display);
 
   --r-xs: 8px;
   --r-sm: 12px;
@@ -54,21 +60,20 @@
 }
 
 :root[data-theme='dark'] {
-  /* Neutrals match the Talamus FE dark theme (talamus-fe/styles/tokens.css); accents stay blue. */
-  --bg: #2B2B2B;
-  --side: #262626;
-  --card: #333333;
-  --card-hover: #3A3A3A;
-  --hair: rgba(255, 251, 242, 0.14);
-  --hair-soft: rgba(255, 251, 242, 0.08);
-  --ink: #FFFBF2;
-  --sub: #D8D4CE;
-  --faint: #ACAAAA;
-  --chip: rgba(255, 251, 242, 0.08);
-  --track: rgba(255, 251, 242, 0.12);
+  --bg: #161617;
+  --side: #1C1C1E;
+  --card: #212124;
+  --card-hover: #26262A;
+  --hair: rgba(255, 255, 255, 0.09);
+  --hair-soft: rgba(255, 255, 255, 0.055);
+  --ink: #F2F2ED;
+  --sub: #A5A5A0;
+  --faint: #71716C;
+  --chip: rgba(255, 255, 255, 0.07);
+  --track: rgba(255, 255, 255, 0.09);
   --accent: #8FC6EE;
-  --nav-ink: #D8D4CE;
-  --nav-wash: rgba(88, 166, 224, 0.08);
+  --nav-ink: #A5A5A0;
+  --nav-wash: rgba(255, 255, 255, 0.07);
   --nav-sel: rgba(88, 166, 224, 0.14);
   --nav-sel-ink: #8FC6EE;
   --brand-bg: rgba(88, 166, 224, 0.18);
@@ -81,9 +86,9 @@
   --warn-ink: #F2A19A;
   --amb-bg: rgba(217, 174, 62, 0.14);
   --amb-ink: #EFCB6A;
-  --cf-hair: rgba(255, 251, 242, 0.14);
-  --knob-off: rgba(255, 251, 242, 0.24);
-  --dot-future: rgba(255, 251, 242, 0.24);
+  --cf-hair: rgba(255, 255, 255, 0.1);
+  --knob-off: rgba(255, 255, 255, 0.18);
+  --dot-future: rgba(255, 255, 255, 0.22);
   --shadow-1: 0px 4px 6px -2px rgba(0, 0, 0, 0.30);
   --shadow-2: 0px 12px 28px -8px rgba(0, 0, 0, 0.45);
   --shadow-pop: 0px 24px 48px -16px rgba(0, 0, 0, 0.60);
@@ -108,6 +113,17 @@
 [data-theme='dark'] [data-school='ktb'] { --s-bar: #8A9BB0; --s-tint: rgba(138, 155, 176, 0.18); --s-text: #B9C6D6; }
 [data-theme='dark'] [data-school='tn'] { --s-bar: #E06AA8; --s-tint: rgba(224, 106, 168, 0.16); --s-text: #F2A6CC; }
 [data-theme='dark'] [data-school='wardaya'] { --s-bar: #9B7FD4; --s-tint: rgba(155, 127, 212, 0.18); --s-text: #C3AEE8; }
+
+/* Avatar colors, picked on Profil: put data-av="<color>" on an avatar to get --av-bg / --av-ink. Blue is the default. */
+:root, [data-av='blue'] { --av-bg: var(--brand-bg); --av-ink: var(--brand-ink); }
+[data-av='teal'] { --av-bg: #DDF3F2; --av-ink: #0E5257; }
+[data-av='purple'] { --av-bg: #EEE8F7; --av-ink: #4A2E80; }
+[data-av='slate'] { --av-bg: #E8ECF1; --av-ink: #2F3A48; }
+[data-av='pink'] { --av-bg: #F9E1EE; --av-ink: #7A1F57; }
+[data-theme='dark'] [data-av='teal'] { --av-bg: rgba(59, 181, 181, 0.16); --av-ink: #7FDADA; }
+[data-theme='dark'] [data-av='purple'] { --av-bg: rgba(155, 127, 212, 0.18); --av-ink: #C3AEE8; }
+[data-theme='dark'] [data-av='slate'] { --av-bg: rgba(138, 155, 176, 0.18); --av-ink: #B9C6D6; }
+[data-theme='dark'] [data-av='pink'] { --av-bg: rgba(224, 106, 168, 0.16); --av-ink: #F2A6CC; }
 
 html, body { margin: 0; padding: 0; background: var(--bg); }
 * { box-sizing: border-box; }

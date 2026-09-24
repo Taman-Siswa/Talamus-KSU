@@ -3,37 +3,61 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { ChecklistItem, PhaseType, School, SchoolInfo } from '@/data/types';
-import { isBundledSchool, newSchoolId, useSchoolsStore } from '@/lib/schools';
+import type { ChecklistItem, ReqCategory, Requirement, School, SchoolInfo } from '@/data/types';
+import { inferPhaseType, isBundledSchool, newSchoolId, reqCategory, useSchoolsStore } from '@/lib/schools';
 import Icon from '../Icon';
-import ui from '../ui.module.css';
 import css from './admin.module.css';
-import { CheckGroup, TagInput, Field, RepeatList, Section, Select, StringList, Switch, TextArea, TextInput } from './fields';
+import {
+  AddButton, ChipLegend, ChipSet, Eyebrow, Field, PickChips, RepeatList, Section, StringList, Switch, TextArea, TextInput,
+} from './fields';
 
-/* One form per school, filled in by the marketing team from their Notion catalog.
-   The top half uses Notion's own field names and order (school page, then the Alur Pendaftaran table),
-   so it can be copied across. The bottom half exists only in KSU and is written from the school's PDF guide. */
-
-const PHASE_TYPES: { value: PhaseType; label: string }[] = [
-  { value: 'daftar', label: 'Pendaftaran' },
-  { value: 'tes', label: 'Tes / seleksi' },
-  { value: 'umum', label: 'Pengumuman' },
-];
+/* One form per school, filled in by the marketing team from their Notion catalog, laid out as "Design system v2".
+   The top half ("Dari Notion") uses Notion's own field names and order, so it can be copied across.
+   The bottom half ("Khusus KSU") exists only in KSU and is written from the school's PDF guide. */
 
 const KINDS: { value: SchoolInfo['kind']; label: string }[] = [
-  { value: '', label: 'Pilih…' },
   { value: 'Negeri', label: 'Negeri' },
   { value: 'Swasta', label: 'Swasta' },
 ];
-
 // The "Asrama/Tidak" options used in the Notion catalog.
-const BOARDING = ['', 'Asrama Heterogen', 'Asrama Semi-Militer', 'Non-Asrama'].map(v => ({ value: v, label: v || 'Pilih…' }));
+const BOARDING = ['Asrama Heterogen', 'Asrama Semi-Militer', 'Non-Asrama'].map(v => ({ value: v, label: v }));
 const FUNDING = ['Beasiswa', 'Berbayar'];
 // Kurikulum tags already used in the Notion catalog; any other can be typed in.
+const CURRICULA = ['Kurikulum Merdeka', 'Kurikulum Nasional', 'Kurikulum K-13', 'Cambridge', 'International Baccalaureate', 'Olimpiade'];
 const SUBJECTS = ['B. Indonesia', 'B. Inggris', 'Matematika', 'IPA', 'IPS'];
 // kelas-semester, in school order
 const SEMESTERS = ['7-1', '7-2', '8-1', '8-2', '9-1', '9-2'];
-const CURRICULA = ['Kurikulum Merdeka', 'Kurikulum Nasional', 'Kurikulum K-13', 'Cambridge', 'International Baccalaureate', 'Olimpiade'];
+const STATUSES: { value: School['status']; label: string }[] = [
+  { value: 'resmi', label: 'Resmi — sudah diumumkan' },
+  { value: 'est', label: 'Perkiraan — ikut tahun lalu' },
+];
+
+const CATEGORIES: ReqCategory[] = ['Akademik', 'Kesehatan', 'Administrasi', 'Domisili', 'Usia', 'Prestasi', 'Lainnya'];
+const CAT_TONE: Record<ReqCategory, string> = {
+  Akademik: css.catBlue, Kesehatan: css.catOk, Administrasi: css.catGrey, Domisili: css.catAmb,
+  Usia: css.catGrey, Prestasi: css.catAmb, Lainnya: css.catGrey,
+};
+/** Optional detail fields some categories have: [key, label, placeholder, input type]. */
+const DETAIL: Partial<Record<ReqCategory, { title: string; fields: [string, string, string, 'text' | 'date'][] }>> = {
+  Akademik: {
+    title: 'Detail tes akademik',
+    fields: [
+      ['jenis', 'Jenis tes', 'Tes tulis / CBT / wawancara', 'text'],
+      ['mapel', 'Mata pelajaran', 'Matematika, IPA, B. Inggris', 'text'],
+      ['standar', 'Standar nilai', 'Rata-rata ≥ 90', 'text'],
+      ['jadwal', 'Jadwal', 'Feb 2027 / lihat alur', 'text'],
+    ],
+  },
+  Kesehatan: {
+    title: 'Detail pemeriksaan',
+    fields: [
+      ['jenis', 'Jenis assessment', 'Rikkes, tes buta warna, kesamaptaan', 'text'],
+      ['tanggal', 'Tanggal', '', 'date'],
+      ['tempat', 'Tempat', 'RS rujukan / lokasi seleksi', 'text'],
+      ['catatan', 'Catatan', 'IMT 17–25, tidak berkacamata > 2 dioptri', 'text'],
+    ],
+  },
+};
 
 /** Turns a label into an id like "surat-sehat"; checklist ids key the saved progress. */
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24) || 'item';
@@ -49,6 +73,11 @@ const autoMono = (short: string) => {
 const endsEarly = (p: { s: string; e: string }) => !!p.s && !!p.e && p.e < p.s;
 const autoPill = (i: SchoolInfo) => [i.kind, i.boarding, i.province].filter(Boolean).join(' · ');
 
+type Part = 'profil' | 'alur' | 'dokumen' | 'syarat' | 'kalkulator' | 'checklist' | 'faq';
+const PART_LABEL: Record<Part, string> = {
+  profil: 'Profil', alur: 'Alur', dokumen: 'Dokumen', syarat: 'Syarat', kalkulator: 'Kalkulator', checklist: 'Checklist', faq: 'FAQ',
+};
+
 /**
  * `school` is what students read now (blank for a school not published yet); `savedDraft` is unfinished work
  * stored apart from it. The form opens on the draft when there is one.
@@ -60,6 +89,9 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
   const base = savedDraft ?? school;
   const [draft, setDraft] = useState<School>(base);
   const [saved, setSaved] = useState(false);
+  // Which of the "Khusus KSU" sections, and which requirement detail panels, are open.
+  const [open, setOpen] = useState<Record<string, boolean>>({ syarat: true });
+  const toggle = (k: string) => setOpen(o => ({ ...o, [k]: !o[k] }));
   const isNew = !published;
 
   // dirty = typed but not stored anywhere yet; a stored draft is safe but still unpublished
@@ -79,7 +111,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
   };
   const set = <K extends keyof School>(k: K, v: School[K]) => patch({ [k]: v } as Pick<School, K>);
 
-  // Nama pendek, kode singkat and the card label fill themselves in until the admin types over them.
+  // Nama pendek, kode and the card label fill themselves in until the admin types over them.
   const setName = (name: string) => {
     const p: Partial<School> = { name };
     if (!draft.short || draft.short === autoShort(draft.name)) {
@@ -95,7 +127,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
     patch(!draft.pill || draft.pill === autoPill(draft.info) ? { info, pill: autoPill(info) } : { info });
   };
 
-  // What stops a save, in the admin's words; shown next to the button.
+  // What stops a save, in the admin's words; shown under the buttons.
   const problems = [
     !draft.name.trim() && 'nama sekolah masih kosong',
     !draft.short.trim() && 'nama pendek masih kosong',
@@ -148,7 +180,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
 
   const count = (n: number, unit: string) => ({ text: n ? n + ' ' + unit : 'Belum diisi', done: n > 0 });
   const profileGaps = [draft.name, draft.short, draft.mono, info.kind, info.province, info.boarding, draft.tag].filter(v => !v.trim()).length;
-  const status = {
+  const status: Record<Part, { text: string; done: boolean }> = {
     profil: { text: profileGaps ? profileGaps + ' kolom utama kosong' : 'Lengkap', done: !profileGaps },
     alur: count(draft.phases.length, 'tahap'),
     dokumen: count(draft.docs.length, 'dokumen'),
@@ -160,237 +192,311 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
   };
   const filled = Object.values(status).filter(s => s.done).length;
 
+  const confirmLeave = (e: React.MouseEvent) => {
+    if (dirty && !window.confirm('Ada perubahan yang belum disimpan. Tinggalkan halaman ini?')) e.preventDefault();
+  };
+
   return (
-    <div data-school={draft.id}>
-      <h1 className={ui.h1}>{draft.name || (isNew ? 'Sekolah baru' : 'Tanpa nama')}</h1>
-      <p className={ui.lead}>
-        {filled} dari 7 bagian terisi ·{' '}
-        {dirty ? 'ada perubahan yang belum disimpan'
-          : savedDraft ? (published ? 'ada draft perubahan, siswa masih melihat versi lama' : 'draft, belum tampil ke siswa')
-          : isNew ? 'belum dibuat'
-          : !isBundledSchool(school.id) ? 'sekolah tambahan'
-          : isEdited ? 'sudah diubah dari data bawaan' : 'sama dengan data bawaan'}
-      </p>
-
-      <Link href="/admin/sekolah" className={css.back} aria-label="Kembali ke semua sekolah" title="Semua sekolah"
-        onClick={e => { if (dirty && !window.confirm('Ada perubahan yang belum disimpan. Tinggalkan halaman ini?')) e.preventDefault(); }}>
-        <Icon name="arrowLeft" size={20} />
-      </Link>
-
-      <Section id="profil" title="Profil sekolah" icon="navKatalog" status={status.profil}
-        desc="Dari halaman sekolah di Notion. Tampil di Katalog dan halaman profil sekolah.">
-        <Field label="Nama sekolah" required hint="Judul halaman sekolah di Notion">
-          <TextInput value={draft.name} onChange={setName} placeholder="SMA Pradita Dirgantara" />
-        </Field>
-        <div className={css.grid2}>
-          <Field label="Nama pendek" required hint="Terisi otomatis dari nama sekolah. Ini yang dibaca siswa di menu pilihan sekolah dan Timeline.">
-            <TextInput value={draft.short} onChange={setShort} placeholder="Pradita Dirgantara" />
-          </Field>
-          <Field label="Kode singkat" required hint="2–3 huruf di kotak kecil sebelah nama sekolah. Terisi otomatis.">
-            <TextInput value={draft.mono} onChange={v => set('mono', v.toUpperCase())} maxLength={4} placeholder="PD" />
-          </Field>
+    <div className={css.editor} data-school={draft.id}>
+      <div className={css.head}>
+        <Link href="/admin/sekolah" className={css.back} aria-label="Kembali ke semua sekolah" title="Semua sekolah" onClick={confirmLeave}>
+          <Icon name="arrowLeft" size={20} />
+        </Link>
+        <div className={css.headText}>
+          <h1 className={css.title}>{draft.name || (isNew ? 'Sekolah baru' : 'Tanpa nama')}</h1>
+          <p className={css.lead}>
+            {filled} dari 7 bagian terisi ·{' '}
+            {dirty ? 'ada perubahan yang belum disimpan'
+              : savedDraft ? (published ? 'ada draft perubahan, siswa masih melihat versi lama' : 'draft, belum tampil ke siswa')
+              : isNew ? 'belum dibuat'
+              : !isBundledSchool(school.id) ? 'sekolah tambahan'
+              : isEdited ? 'sudah diubah dari data bawaan' : 'sama dengan data bawaan'}
+          </p>
         </div>
-        <div className={css.grid3}>
-          <Field label="Negeri/Swasta"><Select value={info.kind} onChange={v => setInfo({ kind: v })} options={KINDS} /></Field>
-          <Field label="Provinsi"><TextInput value={info.province} onChange={v => setInfo({ province: v })} placeholder="Jawa Tengah" /></Field>
-          <Field label="Asrama/Tidak"><Select value={info.boarding} onChange={v => setInfo({ boarding: v })} options={BOARDING} /></Field>
+      </div>
+
+      <div className={css.progress} aria-label="Kelengkapan tiap bagian">
+        {(Object.keys(status) as Part[]).map(k => (
+          <span key={k} className={[css.progressPill, status[k].done ? css.progressDone : ''].join(' ')}>
+            <i />{PART_LABEL[k]}
+          </span>
+        ))}
+      </div>
+
+      <Eyebrow className={css.tier}>Dari Notion</Eyebrow>
+
+      <Section id="profil" title="Profil sekolah" icon="navKatalog" status={status.profil}>
+        <div className={css.group}>
+          <Eyebrow>Identitas</Eyebrow>
+          <div className={css.gridIdent}>
+            <Field label="Nama sekolah" required>
+              <TextInput value={draft.name} onChange={setName} placeholder="SMA Pradita Dirgantara" strong />
+            </Field>
+            <Field label="Nama pendek" required>
+              <TextInput value={draft.short} onChange={setShort} placeholder="Pradita Dirgantara" />
+            </Field>
+            <Field label="Kode" required>
+              <TextInput value={draft.mono} onChange={v => set('mono', v.toUpperCase().slice(0, 4))} maxLength={4} placeholder="PD" code />
+            </Field>
+          </div>
         </div>
-        <Field label="Label di kartu sekolah" hint="Terisi otomatis dari tiga kolom di atas. Boleh dipendekkan.">
-          <TextInput value={draft.pill} onChange={v => set('pill', v)} placeholder="Swasta · Asrama Semi-Militer · Jawa Tengah" />
-        </Field>
-        <div className={css.grid3}>
-          <Field label="Tahun berdiri"><TextInput value={info.founded} onChange={v => setInfo({ founded: v })} placeholder="2018" /></Field>
-          <Field label="Kuota/angkatan"><TextInput value={info.quota} onChange={v => setInfo({ quota: v })} placeholder="150" /></Field>
+
+        <div className={css.group}>
+          <Eyebrow>Klasifikasi</Eyebrow>
+          <div className={css.grid3}>
+            <Field label="Negeri/Swasta" group>
+              <PickChips label="Negeri/Swasta" value={info.kind} options={KINDS} clearable="" onChange={v => setInfo({ kind: v })} />
+            </Field>
+            <Field label="Provinsi">
+              <TextInput value={info.province} onChange={v => setInfo({ province: v })} placeholder="Jawa Tengah" />
+            </Field>
+            <Field label="Asrama/Tidak" group>
+              <PickChips label="Asrama/Tidak" value={info.boarding} options={BOARDING} clearable="" onChange={v => setInfo({ boarding: v })} />
+            </Field>
+          </div>
+          <div className={[css.grid3, css.gap].join(' ')}>
+            <Field label="Tahun berdiri"><TextInput value={info.founded} onChange={v => setInfo({ founded: v })} placeholder="2018" /></Field>
+            <Field label="Kuota/angkatan"><TextInput value={info.quota} onChange={v => setInfo({ quota: v })} placeholder="150" /></Field>
+            <Field label="Label di kartu">
+              <TextInput value={draft.pill} onChange={v => set('pill', v)} placeholder="Swasta · Asrama · Jawa Tengah" />
+            </Field>
+          </div>
+        </div>
+
+        <div className={[css.group, css.groupLoose].join(' ')}>
+          <div className={css.groupHead}>
+            <Eyebrow>Pembiayaan &amp; kurikulum</Eyebrow>
+            <ChipLegend />
+          </div>
           <Field label="Pembiayaan" group>
-            <CheckGroup label="Pembiayaan" value={info.funding} onChange={v => setInfo({ funding: v })} options={FUNDING} />
+            <ChipSet label="Pembiayaan" value={info.funding} onChange={v => setInfo({ funding: v })} options={FUNDING} fixed sorted />
+          </Field>
+          <Field label="Kurikulum" group>
+            <ChipSet label="Kurikulum" value={info.curriculum} onChange={v => setInfo({ curriculum: v })} options={CURRICULA} />
           </Field>
         </div>
-        <Field label="Kurikulum" group hint="Satu sekolah boleh punya beberapa. Klik saran di bawah, atau ketik lalu tekan Enter.">
-          <TagInput label="Kurikulum" value={info.curriculum} onChange={v => setInfo({ curriculum: v })}
-            placeholder="Kurikulum Merdeka" suggestions={CURRICULA} />
-        </Field>
-        <Field label="Kontak sekolah" hint="Website, Instagram, atau nomor admin sekolah">
-          <TextInput value={info.contact} onChange={v => setInfo({ contact: v })} placeholder="https://praditadirgantara.sch.id" />
-        </Field>
-        <Field label="Tentang sekolah" hint="Satu–dua kalimat dari bagian Tentang Sekolah di Notion. Tampil di bawah nama sekolah.">
-          <TextArea value={draft.tag} onChange={v => set('tag', v)} rows={2}
-            placeholder="Sekolah berasrama di bawah naungan TNI AU di Boyolali, dengan kurikulum nasional dan IB." />
-        </Field>
-        <Field label="Fakta tambahan" hint="Opsional. Hal lain yang perlu diketahui siswa, misalnya lokasi kampus atau batas usia.">
-          <StringList items={draft.facts} onChange={v => set('facts', v)} addLabel="Tambah fakta"
-            placeholder="Boyolali, Jawa Tengah (kompleks Bandara Adi Soemarmo)" empty="Belum ada fakta tambahan." />
-        </Field>
+
+        <div className={[css.group, css.groupLoose].join(' ')}>
+          <Eyebrow>Kontak &amp; deskripsi</Eyebrow>
+          <Field label="Kontak sekolah">
+            <TextInput value={info.contact} onChange={v => setInfo({ contact: v })} placeholder="Website, Instagram, atau nomor admin" />
+          </Field>
+          <Field label="Tentang sekolah">
+            <TextArea value={draft.tag} onChange={v => set('tag', v)} placeholder="Satu–dua kalimat dari Notion. Tampil di bawah nama sekolah." />
+          </Field>
+          <Field label="Informasi tambahan" group>
+            <StringList items={draft.facts} onChange={v => set('facts', v)} addLabel="Tambah informasi"
+              placeholder="Lokasi kampus, batas usia, dll." />
+          </Field>
+        </div>
       </Section>
 
-      <Section id="alur" title="Alur pendaftaran" icon="navTimeline" status={status.alur}
-        desc="Dari tabel Alur Pendaftaran Sekolah di Notion. Tiap tahap cukup diisi sekali: dari sini dibuat Timeline, daftar deadline, dan jadwal di halaman sekolah.">
-        <Field label="Status" hint="Sama dengan kolom Status di Notion">
-          <Select value={draft.status} onChange={v => set('status', v)}
-            options={[{ value: 'resmi', label: 'Resmi — jadwal tahun ini sudah diumumkan sekolah' }, { value: 'est', label: 'Perkiraan — mengikuti jadwal tahun lalu' }]} />
-        </Field>
-        <Field label="Catatan status untuk siswa" hint="Kotak info di atas halaman sekolah.">
-          <TextArea value={draft.banner} onChange={v => set('banner', v)}
-            placeholder="Jadwal 2027/28 belum rilis. Tanggal di bawah mengikuti pola tahun lalu, cek lagi saat pengumuman resmi keluar." />
-        </Field>
-        <Field label="Tahapan" hint="Satu baris per nomor di kolom Alur Pendaftaran, urut dari atas.">
-          <RepeatList items={draft.phases} onChange={v => set('phases', v)}
-            blank={() => ({ l: '', s: '', e: '', t: 'tes' as PhaseType, est: draft.status === 'est' })}
-            addLabel="Tambah tahap" rowLabel={(item, i) => (i + 1) + '. ' + (item.l || 'Tahap baru')} empty="Belum ada tahap."
-            render={(item, setItem) => (
-              <>
-                <Field label="Nama tahap" required><TextInput value={item.l} onChange={v => setItem({ l: v })} placeholder="Seleksi administrasi" /></Field>
-                <div className={css.grid3}>
-                  <Field label="Tanggal mulai" required>
-                    <TextInput type="date" value={item.s} max={item.e || undefined} onChange={v => setItem({ s: v })} />
-                  </Field>
-                  <Field label="Tanggal selesai" hint="Kosongkan kalau hanya satu hari"
-                    error={endsEarly(item) ? 'Tanggal selesai lebih awal dari tanggal mulai' : undefined}>
-                    <TextInput type="date" value={item.e} min={item.s || undefined} invalid={endsEarly(item)} onChange={v => setItem({ e: v })} />
-                  </Field>
-                  <Field label="Jenis tahap"><Select value={item.t} onChange={v => setItem({ t: v })} options={PHASE_TYPES} /></Field>
+      <Section id="alur" title="Alur pendaftaran" icon="navTimeline" status={status.alur}>
+        <div className={css.gridStatus}>
+          <Field label="Status jadwal" group>
+            <PickChips label="Status jadwal" value={draft.status} options={STATUSES} onChange={v => set('status', v)} />
+          </Field>
+          <Field label="Catatan status untuk siswa">
+            <TextArea value={draft.banner} onChange={v => set('banner', v)} placeholder="Jadwal 2027/28 belum rilis. Tanggal mengikuti pola tahun lalu…" />
+          </Field>
+        </div>
+        <Eyebrow className={css.gap}>Tahapan</Eyebrow>
+        <RepeatList items={draft.phases} onChange={v => set('phases', v)}
+          blank={() => ({ l: '', s: '', e: '', t: 'tes' as const, est: draft.status === 'est' })}
+          addLabel="Tambah tahap" rowLabel={(item, i) => (i + 1) + '. ' + (item.l || 'Tahap baru')} empty="Belum ada tahap."
+          render={(item, setItem) => (
+            <>
+              <Field label="Nama tahap" required>
+                {/* The kind (registration / test / announcement) follows the name; see inferPhaseType. */}
+                <TextInput value={item.l} onChange={v => setItem({ l: v, t: inferPhaseType(v) })} placeholder="Seleksi administrasi" />
+              </Field>
+              <div className={[css.grid3, css.gridEnd, css.gap].join(' ')}>
+                <Field label="Mulai" required>
+                  <TextInput type="date" value={item.s} max={item.e || undefined} onChange={v => setItem({ s: v })} />
+                </Field>
+                <div className={css.field}>
+                  <TextInput type="date" label="Tanggal selesai (kosong = satu hari)" value={item.e} min={item.s || undefined}
+                    invalid={endsEarly(item)} onChange={v => setItem({ e: v })} />
                 </div>
-                <Switch checked={!!item.est} label="Tanggal tahap ini masih perkiraan"
-                  note="Siswa melihat keterangan “perkiraan” di tahap ini. Matikan kalau tanggalnya sudah resmi."
-                  onChange={v => setItem({ est: v })} />
-              </>
-            )} />
-        </Field>
+                <Switch checked={!!item.est} label="Masih perkiraan" onChange={v => setItem({ est: v })} />
+              </div>
+            </>
+          )} />
       </Section>
 
-      <Section id="dokumen" title="Dokumen & link" icon="doc" status={status.dokumen}
-        desc="Kolom Dokumen dan Link PPDB di Notion: pedoman pendaftaran, situs PPDB, dan arsip tahun lalu.">
+      <Section id="dokumen" title="Dokumen & link" icon="doc" status={status.dokumen}>
         <RepeatList items={draft.docs} onChange={v => set('docs', v)} blank={() => ({ l: '', m: '', h: '', arsip: false })}
           addLabel="Tambah dokumen" rowLabel={item => item.l || 'Dokumen baru'} empty="Belum ada dokumen."
           render={(item, setItem) => (
             <>
-              <Field label="Judul dokumen"><TextInput value={item.l} onChange={v => setItem({ l: v })} placeholder="Pedoman pendaftaran 2027/28" /></Field>
-              <Field label="Keterangan"><TextInput value={item.m} onChange={v => setItem({ m: v })} placeholder="PDF resmi dari panitia, 24 halaman" /></Field>
-              <Field label="Tautan"><TextInput type="url" value={item.h} onChange={v => setItem({ h: v })} placeholder="https://psb.praditadirgantara.sch.id/pedoman.pdf" /></Field>
-              <Switch checked={item.arsip} label="Arsip tahun lalu"
-                note="Ditandai kuning supaya siswa tahu ini bukan dokumen tahun ini." onChange={v => setItem({ arsip: v })} />
+              <div className={css.grid2}>
+                <Field label="Judul dokumen"><TextInput value={item.l} onChange={v => setItem({ l: v })} placeholder="Pedoman pendaftaran 2027/28" /></Field>
+                <Field label="Tautan"><TextInput type="url" value={item.h} onChange={v => setItem({ h: v })} placeholder="https://…" /></Field>
+              </div>
+              <div className={[css.grid2, css.gridEnd, css.gap].join(' ')}>
+                <Field label="Keterangan"><TextInput value={item.m} onChange={v => setItem({ m: v })} placeholder="PDF resmi dari panitia, 24 halaman" /></Field>
+                <Switch checked={item.arsip} label="Arsip tahun lalu" tone="amber" onChange={v => setItem({ arsip: v })} />
+              </div>
             </>
           )} />
       </Section>
 
-      <div className={css.tier}>
-        <h2 className={css.tierTitle}>Khusus KSU</h2>
-        <p className={css.tierDesc}>Tidak ada di Notion. Disusun dari pedoman pendaftaran (PDF) sekolah, dan boleh dilengkapi belakangan. Klik judul bagian untuk membukanya.</p>
-      </div>
+      <Eyebrow className={css.tierLater}>Khusus KSU · dari pedoman PDF sekolah</Eyebrow>
 
-      <Section id="syarat" title="Syarat utama" icon="navChecklist" status={status.syarat} collapsible
-        desc="Ringkasan syarat di halaman profil sekolah.">
-        <RepeatList items={draft.reqs} onChange={v => set('reqs', v)} blank={() => ({ k: '', v: '' })}
+      <Section id="syarat" title="Persyaratan" icon="navChecklist" status={status.syarat}
+        collapsible open={!!open.syarat} onToggle={() => toggle('syarat')}>
+        <p className={css.intro}>
+          Tiap syarat punya kategori, nama, dan deskripsi. Detail tambahan muncul sesuai kategori — opsional, buka hanya bila ada datanya.
+        </p>
+        <RepeatList<Requirement> items={draft.reqs} onChange={v => set('reqs', v)} blank={() => ({ cat: '', k: '', v: '' })}
           addLabel="Tambah syarat" rowLabel={item => item.k || 'Syarat baru'} empty="Belum ada syarat."
-          render={(item, setItem) => (
-            <>
-              <Field label="Nama syarat"><TextInput value={item.k} onChange={v => setItem({ k: v })} placeholder="Nilai rapor" /></Field>
-              <Field label="Penjelasan"><TextArea value={item.v} onChange={v => setItem({ v })}
-                  placeholder="B. Indonesia, B. Inggris, Matematika, IPA semester 1–5: rata-rata tiap mapel minimal 90." /></Field>
-            </>
-          )} />
+          rowBadge={item => {
+            const cat = reqCategory(item);
+            return <span className={[css.cat, cat ? CAT_TONE[cat] : css.catNone].join(' ')}>{cat || 'Tanpa kategori'}</span>;
+          }}
+          render={(item, setItem, i) => {
+            const cat = reqCategory(item);
+            const spec = cat ? DETAIL[cat] : undefined;
+            const det = item.det || {};
+            const filledDet = spec ? spec.fields.filter(f => det[f[0]]).length : 0;
+            const key = 'req' + i;
+            return (
+              <>
+                <Field label="Kategori" group>
+                  <PickChips<ReqCategory | ''> label="Kategori" value={cat} onChange={v => setItem({ cat: v })}
+                    options={CATEGORIES.map(c => ({ value: c, label: c }))} />
+                </Field>
+                <Field label="Nama syarat" className={css.gap}>
+                  <TextInput value={item.k} onChange={v => setItem({ k: v })} placeholder="Nilai rapor" />
+                </Field>
+                <Field label="Deskripsi" className={css.gap}>
+                  <TextArea value={item.v} onChange={v => setItem({ v })}
+                    placeholder="B. Indonesia, B. Inggris, Matematika, IPA semester 1–5: rata-rata tiap mapel minimal 90." />
+                </Field>
+                {spec ? (
+                  <>
+                    <button type="button" className={css.detToggle} aria-expanded={!!open[key]} onClick={() => toggle(key)}>
+                      <Icon name="chevronDown" size={14} stroke={2} className={[css.caret, open[key] ? css.caretOpen : ''].join(' ')} />
+                      {spec.title} (opsional)
+                      <span className={css.detSummary}>{filledDet ? '· ' + filledDet + ' terisi' : '· belum diisi'}</span>
+                    </button>
+                    {open[key] ? (
+                      <div className={css.detPanel}>
+                        {spec.fields.map(([k, label, placeholder, type]) => (
+                          <Field key={k} label={label}>
+                            <TextInput type={type} value={det[k] || ''} placeholder={placeholder}
+                              onChange={v => setItem({ det: { ...det, [k]: v } })} />
+                          </Field>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+              </>
+            );
+          }} />
       </Section>
 
-      <Section id="kalkulator" title="Kalkulator syarat" icon="navKalkulator" status={status.kalkulator} collapsible
-        desc="Batas nilai rapor yang dipakai halaman Kalkulator Syarat untuk mengecek nilai siswa.">
+      <Section id="kalkulator" title="Kalkulator syarat" icon="navKalkulator" status={status.kalkulator}
+        collapsible open={!!open.kalkulator} onToggle={() => toggle('kalkulator')}>
         <Switch checked={!!calc} label="Sekolah ini punya batas nilai rapor"
-          note="Matikan kalau seleksi tidak memakai nilai rapor, seperti KTB."
           onChange={on => set('calc', on ? { subjects: ['Matematika'], sems: ['7-1'], minAvg: 85, minSem: null } : null)} />
         {calc ? (
           <>
-            <Field label="Mata pelajaran">
-              <TagInput label="Mata pelajaran" value={calc.subjects} onChange={v => set('calc', { ...calc, subjects: v })}
-                placeholder="Matematika" suggestions={SUBJECTS} />
+            <Field label="Mata pelajaran" group>
+              <ChipSet label="Mata pelajaran" value={calc.subjects} onChange={v => set('calc', { ...calc, subjects: v })} options={SUBJECTS} />
             </Field>
-            <Field label="Semester yang dihitung" group hint="Format kelas-semester: 7-1 berarti kelas 7 semester 1.">
-              <TagInput label="Semester yang dihitung" value={calc.sems} onChange={v => set('calc', { ...calc, sems: v })}
-                placeholder="7-1" suggestions={SEMESTERS} sorted />
+            <Field label="Semester yang dihitung" note="kelas-semester" group>
+              <ChipSet label="Semester yang dihitung" value={calc.sems} onChange={v => set('calc', { ...calc, sems: v })} options={SEMESTERS} fixed sorted />
             </Field>
             <div className={css.grid2}>
               <Field label="Rata-rata minimal per mapel">
                 <TextInput type="number" placeholder="85" value={String(calc.minAvg)} onChange={v => set('calc', { ...calc, minAvg: Number(v) || 0 })} />
               </Field>
-              <Field label="Nilai minimal tiap semester" hint="Kosongkan kalau tidak ada batas per semester">
-                <TextInput type="number" placeholder="80" value={calc.minSem == null ? '' : String(calc.minSem)}
+              <Field label="Nilai minimal tiap semester" note="opsional">
+                <TextInput type="number" placeholder="Kosong = tidak ada batas" value={calc.minSem == null ? '' : String(calc.minSem)}
                   onChange={v => set('calc', { ...calc, minSem: v === '' ? null : Number(v) || 0 })} />
               </Field>
             </div>
-            <Field label="Penjelasan untuk siswa" hint="Tampil di atas tabel nilai: nilai rapor mana yang dipakai dan berapa batasnya.">
-              <TextArea value={draft.calcNote} onChange={v => set('calcNote', v)}
-                placeholder="Nilai pengetahuan rapor 5 semester (kelas 7 sem 1 s.d. kelas 9 sem 1). Syarat: rata-rata tiap mapel ≥ 90, tidak ada batas per semester." />
+            <Field label="Penjelasan untuk siswa">
+              <TextArea value={draft.calcNote} onChange={v => set('calcNote', v)} placeholder="Nilai rapor mana yang dipakai dan berapa batasnya." />
             </Field>
             <div className={css.grid2}>
-              <Field label="Pesan kalau nilainya memenuhi" hint="Muncul di bawah tulisan “Memenuhi syarat nilai”. Isi langkah berikutnya.">
-                <TextArea value={draft.passNote || ''} onChange={v => set('passNote', v)}
-                  placeholder="Rata-rata memenuhi batas 90. Selanjutnya penentu adalah Tes Akademik." />
+              <Field label="Pesan bila memenuhi">
+                <TextArea value={draft.passNote || ''} onChange={v => set('passNote', v)} placeholder="Langkah berikutnya untuk siswa." />
               </Field>
-              <Field label="Pesan kalau nilainya belum memenuhi" hint="Muncul setelah daftar mapel yang kurang. Isi saran untuk siswa.">
-                <TextArea value={draft.failNote || ''} onChange={v => set('failNote', v)}
-                  placeholder="Nilai sem 1 kelas 9 masih dihitung, fokus naikkan di sana bila belum final." />
+              <Field label="Pesan bila belum memenuhi">
+                <TextArea value={draft.failNote || ''} onChange={v => set('failNote', v)} placeholder="Saran untuk siswa." />
               </Field>
             </div>
           </>
         ) : (
-          <>
-            <Field label="Penjelasan untuk siswa" hint="Tampil di bagian atas halaman Kalkulator: kenapa sekolah ini tidak memakai nilai rapor.">
-              <TextArea value={draft.calcNote} onChange={v => set('calcNote', v)}
-                placeholder="Sekolah ini tidak memakai batas nilai rapor, seleksi murni lewat tes." />
+          <div className={css.grid2}>
+            <Field label="Penjelasan untuk siswa">
+              <TextArea value={draft.calcNote} onChange={v => set('calcNote', v)} placeholder="Kenapa sekolah ini tidak memakai nilai rapor." />
             </Field>
-            <Field label="Pesan pengganti hasil" hint="Muncul di bawah tulisan “Tidak ada ambang nilai rapor”, sebagai ganti hasil memenuhi/belum.">
-              <TextArea value={draft.noGradeNote || ''} onChange={v => set('noGradeNote', v)}
-                placeholder="Tidak ada gugur berkas, fokus persiapan ke tes potensi akademik." />
+            <Field label="Pesan pengganti hasil">
+              <TextArea value={draft.noGradeNote || ''} onChange={v => set('noGradeNote', v)} placeholder="Tidak ada gugur berkas, fokus ke tes potensi akademik." />
             </Field>
-          </>
+          </div>
         )}
-        <Field label="Catatan tinggi & berat badan" hint="Muncul di samping kolom tinggi dan berat badan siswa. Kosongkan kalau sekolah ini tidak menilai postur.">
-          <TextArea value={draft.bodyNote || ''} onChange={v => set('bodyNote', v)} rows={2}
+        <Field label="Catatan tinggi & berat badan" note="kosongkan bila tidak dinilai">
+          <TextArea value={draft.bodyNote || ''} onChange={v => set('bodyNote', v)}
             placeholder="Tidak ada angka resmi, postur dinilai saat tes kesehatan. IMT 17–25 patokan aman." />
         </Field>
       </Section>
 
-      <Section id="checklist" title="Checklist persiapan" icon="navChecklist" status={status.checklist} collapsible
-        desc="Daftar tugas yang dicentang siswa. Urutannya sama dengan yang mereka lihat.">
+      <Section id="checklist" title="Checklist persiapan" icon="navChecklist" status={status.checklist}
+        collapsible open={!!open.checklist} onToggle={() => toggle('checklist')}>
         <RepeatList items={draft.checklist} onChange={v => set('checklist', v)}
           blank={(): ChecklistItem => ({ id: 'item-' + Date.now().toString(36), l: '', d: '', dl: '' })}
           addLabel="Tambah item checklist" rowLabel={item => item.l || 'Item baru'} empty="Belum ada item."
-          render={(item, setItem) => (
-            <>
-              <Field label="Judul tugas">
-                <TextInput value={item.l} onChange={v => setItem({ l: v, id: item.l ? item.id : slug(v) })} placeholder="Surat keterangan sehat dari dokter" />
-              </Field>
-              <Field label="Catatan" hint="Baris kecil di bawah judul"><TextInput value={item.note || ''} onChange={v => setItem({ note: v })} placeholder="Dari dokter pemerintah, maksimal 3 bulan terakhir" /></Field>
-              <div className={css.grid2}>
-                <Field label="Teks tenggat" hint="Yang terbaca siswa di sebelah tugas">
-                  <TextInput value={item.d} onChange={v => setItem({ d: v })} placeholder="±2 Feb 2027" />
+          render={(item, setItem) => {
+            const fields = item.f || [];
+            const setFields = (f: typeof fields) => setItem({ f: f.length ? f : undefined });
+            return (
+              <>
+                <Field label="Judul tugas">
+                  <TextInput value={item.l} onChange={v => setItem({ l: v, id: item.l ? item.id : slug(v) })} placeholder="Surat keterangan sehat dari dokter" medium />
                 </Field>
-                <Field label="Tanggal tenggat" hint="Dipakai untuk menandai lewat tenggat">
-                  <TextInput type="date" value={item.dl} onChange={v => setItem({ dl: v })} />
-                </Field>
-              </div>
-              <Switch checked={!!item.up} label="Perlu lampiran berkas" onChange={v => setItem({ up: v })} />
-              <Field label="Kolom isian" hint="Data yang diketik siswa di bawah tugas ini, seperti NISN atau akun pendaftaran">
-                <RepeatList items={item.f || []} onChange={v => setItem({ f: v.length ? v : undefined })}
-                  blank={() => ({ k: '', p: '' })} addLabel="Tambah kolom isian"
-                  rowLabel={f => f.p || 'Kolom baru'} empty="Tidak ada kolom isian."
-                  render={(f, setF) => (
-                    <div className={css.grid2}>
-                      <Field label="Kode kolom" hint="Huruf kecil tanpa spasi"><TextInput value={f.k} onChange={v => setF({ k: v })} placeholder="nisn" /></Field>
-                      <Field label="Teks petunjuk"><TextInput value={f.p} onChange={v => setF({ p: v })} placeholder="NISN (10 digit)" /></Field>
-                    </div>
-                  )} />
-              </Field>
-            </>
-          )} />
+                <div className={[css.grid3, css.gap].join(' ')}>
+                  <Field label="Catatan"><TextInput value={item.note || ''} onChange={v => setItem({ note: v })} placeholder="Baris kecil di bawah judul" /></Field>
+                  <Field label="Teks tenggat"><TextInput value={item.d} onChange={v => setItem({ d: v })} placeholder="±2 Feb 2027" /></Field>
+                  <Field label="Tanggal tenggat"><TextInput type="date" value={item.dl} onChange={v => setItem({ dl: v })} /></Field>
+                </div>
+                <div className={css.rowTools}>
+                  <AddButton onClick={() => setFields([...fields, { k: '', p: '' }])}>Tambah kolom isian siswa</AddButton>
+                </div>
+                {fields.map((f, j) => (
+                  <div key={j} className={css.fieldRow}>
+                    <Field label="Kode kolom">
+                      <TextInput value={f.k} onChange={v => setFields(fields.map((x, q) => (q === j ? { ...x, k: v } : x)))} placeholder="nisn" />
+                    </Field>
+                    <Field label="Teks petunjuk untuk siswa">
+                      <TextInput value={f.p} onChange={v => setFields(fields.map((x, q) => (q === j ? { ...x, p: v } : x)))} placeholder="NISN (10 digit)" />
+                    </Field>
+                    <button type="button" className={[css.rowBtn, css.rowBtnDanger].join(' ')} aria-label="Hapus kolom" title="Hapus kolom"
+                      onClick={() => setFields(fields.filter((_, q) => q !== j))}>
+                      <Icon name="x" size={14} stroke={1.8} />
+                    </button>
+                  </div>
+                ))}
+              </>
+            );
+          }} />
       </Section>
 
-      <Section id="faq" title="FAQ" icon="navFaq" status={status.faq} collapsible
-        desc="Pertanyaan yang sering ditanyakan orang tua dan siswa.">
+      <Section id="faq" title="FAQ" icon="navFaq" status={status.faq}
+        collapsible open={!!open.faq} onToggle={() => toggle('faq')}>
         <RepeatList items={draft.faq} onChange={v => set('faq', v)} blank={() => ({ q: '', a: '' })}
           addLabel="Tambah pertanyaan" rowLabel={item => item.q || 'Pertanyaan baru'} empty="Belum ada pertanyaan."
           render={(item, setItem) => (
             <>
-              <Field label="Pertanyaan"><TextInput value={item.q} onChange={v => setItem({ q: v })} placeholder="Apakah ada biaya pendaftaran?" /></Field>
-              <Field label="Jawaban"><TextArea value={item.a} onChange={v => setItem({ a: v })} rows={4}
-                placeholder="Tidak ada. Pendaftaran dan seluruh tahap seleksi gratis, peserta hanya menanggung biaya perjalanan ke lokasi tes." /></Field>
+              <Field label="Pertanyaan"><TextInput value={item.q} onChange={v => setItem({ q: v })} placeholder="Apakah ada biaya pendaftaran?" medium /></Field>
+              <Field label="Jawaban" className={css.gap}>
+                <TextArea value={item.a} onChange={v => setItem({ a: v })} rows={3}
+                  placeholder="Tidak ada. Pendaftaran dan seluruh tahap seleksi gratis…" />
+              </Field>
             </>
           )} />
       </Section>
@@ -399,27 +505,13 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
         <button type="button" className={[css.btn, css.btnPrimary].join(' ')} onClick={onSave} disabled={!unpublished || problems.length > 0}>
           <Icon name="check" size={16} stroke={2.2} />{published ? 'Simpan' : 'Simpan & tampilkan ke siswa'}
         </button>
-        <button type="button" className={css.btn} onClick={onSaveDraft} disabled={!dirty}>
-          <Icon name="doc" size={16} />Simpan sebagai draft
-        </button>
-        {savedDraft ? (
-          <button type="button" className={css.btn} onClick={onDiscardDraft}>
-            <Icon name="trash" size={16} />Buang draft
-          </button>
-        ) : null}
-        {isEdited && !savedDraft ? (
-          <button type="button" className={css.btn} onClick={onReset}>
-            <Icon name="reset" size={16} />Kembalikan ke data bawaan
-          </button>
-        ) : null}
+        <button type="button" className={css.btn} onClick={onSaveDraft} disabled={!dirty}>Simpan sebagai draft</button>
+        {savedDraft ? <button type="button" className={css.btn} onClick={onDiscardDraft}>Buang draft</button> : null}
+        {isEdited && !savedDraft ? <button type="button" className={css.btn} onClick={onReset}>Kembalikan ke data bawaan</button> : null}
         {!isBundledSchool(school.id) && published ? (
-          <button type="button" className={[css.btn, css.btnDanger].join(' ')} onClick={onDelete}>
-            <Icon name="trash" size={16} />Hapus sekolah
-          </button>
+          <button type="button" className={[css.btn, css.btnDanger].join(' ')} onClick={onDelete}>Hapus sekolah</button>
         ) : null}
-        {saved && !dirty ? (
-          <span className={css.saved}><Icon name="check" size={14} stroke={2.4} />Draft tersimpan</span>
-        ) : null}
+        {saved && !dirty ? <span className={css.saved}><Icon name="check" size={14} stroke={2.4} />Draft tersimpan</span> : null}
         <p className={css.footNote}>
           {published
             ? 'Simpan langsung mengubah yang dilihat siswa. Draft menyimpan pekerjaanmu tanpa mengubah apa pun di sisi siswa.'

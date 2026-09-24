@@ -61,32 +61,44 @@ function usePopover() {
   return { open, setOpen, wrap };
 }
 
-/** Target-school dropdown (Talamus FE Dropdown pattern): trigger pill + popover list with a check on the active one. */
+/** Target-school dropdown: trigger pill + a list with the school's color dot and a check on the active one. */
 function SchoolPicker({ schools, active, onPick }: { schools: School[]; active: School; onPick: (id: School['id']) => void }) {
   const { open, setOpen, wrap } = usePopover();
   return (
     <div className={css.pick} ref={wrap} data-school={active.id}>
       <button type="button" className={css.pickBtn} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className={css.chipDot} />
-        <span className={css.pickPrefix}>Sekolah tujuan</span>
+        <span>Sekolah tujuan</span>
         <span className={css.pickVal}>{active.short}</span>
-        <Icon name="down" size={14} />
+        <Icon name="chevronDown" size={15} stroke={2} />
       </button>
       {open && (
         <div className={css.pop} role="listbox" aria-label="Sekolah tujuan">
           {schools.map(s => {
             const on = s.id === active.id;
             return (
-              <button key={s.id} type="button" role="option" aria-selected={on} data-school={s.id} className={css.popItem}
+              <button key={s.id} type="button" role="option" aria-selected={on} data-school={s.id}
+                className={[css.popItem, on ? css.popItemOn : ''].join(' ')}
                 onClick={() => { setOpen(false); if (!on) onPick(s.id); }}>
-                <span className={[css.mono, css.monoSm].join(' ')}>{s.mono}</span>
+                <span className={css.chipDot} />
                 <span className={css.popLabel}>{s.short}</span>
-                <span className={css.popIcon}>{on && <Icon name="check" size={16} />}</span>
+                {on && <Icon name="check" size={15} stroke={2.2} />}
               </button>
             );
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+/** The active school's full name, its pills and a link to its profile, under the dropdown. */
+function SchoolLine({ school: S }: { school: School }) {
+  return (
+    <div className={css.schoolLine} data-school={S.id}>
+      <span className={css.schoolLineName}>{S.name}</span>
+      <StatusPills school={S} />
+      <Link href={'/katalog/' + S.id} className={css.linkBtn}>Lihat profil sekolah</Link>
     </div>
   );
 }
@@ -103,6 +115,7 @@ export default function SchoolChips({ children }: { children: (school: School) =
   return (
     <>
       <SchoolPicker schools={targets} active={S} onPick={setFSchool} />
+      <SchoolLine school={S} />
       {children(S)}
     </>
   );

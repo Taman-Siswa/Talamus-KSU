@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { SCHOOLS } from '@/data/schools';
-import type { School, SchoolId, SchoolInfo } from '@/data/types';
+import type { PhaseType, ReqCategory, Requirement, School, SchoolId, SchoolInfo } from '@/data/types';
 
 // School data the admin edits. Unlike student data this key is NOT per-account: one browser has
 // one set of school data, so an admin's edits are what students on that browser read.
@@ -149,3 +149,33 @@ export function useUnpublishedDrafts(): School[] {
 
 /** True when this school differs from the data shipped with the app. */
 export const useIsEdited = (id: SchoolId) => useSchoolsStore(s => !!s.overrides[id]);
+
+/**
+ * Category for a requirement saved before categories existed, guessed from its name.
+ * Same rules as the design (Design system v2); the admin can always pick another.
+ */
+export function guessReqCategory(name: string): ReqCategory | '' {
+  const s = (name || '').toLowerCase();
+  if (/sehat|kesehatan|fisik|postur|tinggi/.test(s)) return 'Kesehatan';
+  if (/domisili|kk |wilayah/.test(s)) return 'Domisili';
+  if (/usia|umur/.test(s)) return 'Usia';
+  if (/prestasi/.test(s)) return 'Prestasi';
+  if (/dokumen|berkas|ketentuan|administrasi/.test(s)) return 'Administrasi';
+  if (/nilai|rapor|akademik|tes|seleksi|iq|jalur|tahapan|gelombang|try/.test(s)) return 'Akademik';
+  return '';
+}
+
+export const reqCategory = (r: Requirement): ReqCategory | '' => (r.cat !== undefined ? r.cat : guessReqCategory(r.k));
+
+/**
+ * The editor no longer asks for a stage's kind, so it follows the stage name:
+ * "Pendaftaran …" / "Registrasi …" / "… gelombang …" opens registration, "Pengumuman …" / "Sosialisasi …" is an
+ * announcement, anything else is a test or selection step. "Daftar ulang" and "Seleksi & pengumuman …" stay tests.
+ * The kind drives the Timeline bar style, the clash check (tests only) and the open/close deadlines.
+ */
+export function inferPhaseType(name: string): PhaseType {
+  const s = name.trim().toLowerCase();
+  if (/^(pengumuman|sosialisasi)/.test(s)) return 'umum';
+  if (/^(pendaftaran|registrasi)|gelombang/.test(s)) return 'daftar';
+  return 'tes';
+}

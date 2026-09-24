@@ -19,7 +19,6 @@ export interface ChecklistItem {
   dl: string;
   note?: string;
   f?: { k: string; p: string }[];
-  up?: boolean;
 }
 
 /** Mirrors the properties of a school page in the marketing team's Notion catalog, under the same names. */
@@ -37,6 +36,19 @@ export interface SchoolInfo {
   contact: string;
 }
 
+export type ReqCategory = 'Akademik' | 'Kesehatan' | 'Administrasi' | 'Domisili' | 'Usia' | 'Prestasi' | 'Lainnya';
+
+/**
+ * One line of "Persyaratan". `cat` is optional so older records still load; the editor guesses it from the name
+ * until the admin picks one. `det` holds the optional detail fields some categories have (tes akademik, pemeriksaan).
+ */
+export interface Requirement {
+  k: string;
+  v: string;
+  cat?: ReqCategory | '';
+  det?: Record<string, string>;
+}
+
 export interface School {
   id: SchoolId;
   mono: string;
@@ -51,7 +63,7 @@ export interface School {
   /** info-freshness note */
   banner: string;
   facts: string[];
-  reqs: { k: string; v: string }[];
+  reqs: Requirement[];
   calc: Calc | null;
   calcNote: string;
   passNote?: string;

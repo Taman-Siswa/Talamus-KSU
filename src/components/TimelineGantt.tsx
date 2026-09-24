@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import type { School } from '@/data/types';
 import { P, R0, SPAN, fmt, fmtR, pct, startOfToday } from '@/lib/dates';
 import { keyDatesOf } from '@/lib/schools';
@@ -43,13 +42,14 @@ export function UpcomingDeadlines({ schools }: { schools: School[] }) {
 /** Gantt + conflict check for the given schools (the student's Katalog targets). */
 export default function TimelineGantt({ schools: selected }: { schools: School[] }) {
   const today = startOfToday();
-  const todayLeft = (((today.valueOf() - R0.valueOf()) / SPAN) * 100).toFixed(2) + '%';
+  // today sits in the lane area, after the name column
+  const todayAt = `calc(var(--name-w) + (100% - var(--name-w)) * ${((today.valueOf() - R0.valueOf()) / SPAN).toFixed(4)})`;
 
-  // Conflict = test/selection phases of two different selected schools overlapping.
+  // Conflict = any stage of one target overlapping any stage of another (as in "Design system v2 Murid").
   const confs: { range: string; title: string }[] = [];
   for (let i = 0; i < selected.length; i++) for (let j = i + 1; j < selected.length; j++) {
-    selected[i].phases.filter(p => p.t === 'tes').forEach(pa => {
-      selected[j].phases.filter(p => p.t === 'tes').forEach(pb => {
+    selected[i].phases.forEach(pa => {
+      selected[j].phases.forEach(pb => {
         const s0 = Math.max(P(pa.s).valueOf(), P(pb.s).valueOf());
         const e0 = Math.min(P(pa.e).valueOf(), P(pb.e).valueOf());
         if (s0 <= e0) confs.push({
@@ -68,12 +68,9 @@ export default function TimelineGantt({ schools: selected }: { schools: School[]
           <div className={css.cardTitle}>Timeline gabungan</div>
           <div className={css.ganttRange}>Sep 2026 – Apr 2027</div>
         </div>
-        <div className={css.cardSub} style={{ marginBottom: 16 }}>
-          Menampilkan {selected.length} sekolah target.{' '}
-          <Link href="/katalog" className={css.linkBtn}>Ubah di Katalog</Link>
-        </div>
         <div className={css.scrollX}>
           <div className={css.gantt}>
+            <div className={css.todayLabel} style={{ left: todayAt }}>Hari ini</div>
             <div className={css.months}>
               <div className={css.monthsPad} />
               <div className={css.monthsGrid}>
@@ -81,9 +78,7 @@ export default function TimelineGantt({ schools: selected }: { schools: School[]
               </div>
             </div>
             <div className={css.ganttBody}>
-              {/* today marker is positioned inside the lane area (after the 120px name column) */}
-              <div className={css.todayLine} style={{ left: `calc(120px + (100% - 120px) * ${parseFloat(todayLeft) / 100})` }} />
-              <div className={css.todayLabel} style={{ left: `calc(120px + (100% - 120px) * ${parseFloat(todayLeft) / 100})` }}>Hari ini</div>
+              <div className={css.todayLine} style={{ left: todayAt }} />
               {selected.map(s => (
                 <div key={s.id} className={css.ganttRow} data-school={s.id}>
                   <div className={css.ganttName}>
@@ -95,18 +90,13 @@ export default function TimelineGantt({ schools: selected }: { schools: School[]
                       const l = pct(p.s), w = Math.max(1.2, pct(p.e) - l + 0.8);
                       return (
                         <div key={p.l} title={p.l + ' · ' + fmtR(p.s, p.e) + (p.est ? ' (perkiraan)' : '')}
-                          className={[css.bar, p.t === 'tes' ? css.barTes : '', p.t === 'umum' ? css.barUmum : ''].join(' ')}
+                          className={css.bar}
                           style={{ left: l.toFixed(2) + '%', width: w.toFixed(2) + '%' }} />
                       );
                     })}
                   </div>
                 </div>
               ))}
-            </div>
-            <div className={css.legend}>
-              <span className={css.legendItem}><span className={css.lgDaftar} />Pendaftaran</span>
-              <span className={css.legendItem}><span className={css.lgTes} />Tes / seleksi</span>
-              <span className={css.legendItem}><span className={css.lgUmum} />Pengumuman</span>
             </div>
           </div>
         </div>
@@ -119,7 +109,7 @@ export default function TimelineGantt({ schools: selected }: { schools: School[]
         </div>
         <div className={css.conflictDesc}>
           {has
-            ? 'Jadwal tes/seleksi sekolah terpilih beririsan di periode berikut — sebagian masih perkiraan, cek lagi saat info resmi keluar.'
+            ? 'Jadwal tes/seleksi sekolah terpilih beririsan di periode berikut:'
             : 'Jadwal tes sekolah yang dipilih tidak beririsan. Cek lagi saat jadwal resmi keluar.'}
         </div>
         {confs.map((cf, i) => (

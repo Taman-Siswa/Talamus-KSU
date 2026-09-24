@@ -1,0 +1,82 @@
+/* Profil, laid out like the Talamus FE profile (header, form cards on the left, account cards on the right).
+   Fonts come from --ui-text / --ui-display, so it reads as a student page for students and as an admin page for admins. */
+
+.page { container-type: inline-size; }
+
+.head { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; min-width: 0; }
+.avatar {
+  width: 56px; height: 56px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  background: var(--av-bg); color: var(--av-ink); font: 700 20px/1 var(--ui-display);
+}
+.headName { font: 700 24px/1.2 var(--ui-display); letter-spacing: -0.01em; color: var(--ink); margin: 0; overflow-wrap: anywhere; }
+.headMeta { font: 400 13.5px/1.4 var(--ui-text); color: var(--sub); overflow-wrap: anywhere; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.card { background: var(--card); border: 1px solid var(--hair); border-radius: 20px; padding: 22px 24px; min-width: 0; }
+.cardHead { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.cardHead > svg { color: var(--accent); }
+.cardTitle { font: 600 17px/1.2 var(--ui-display); letter-spacing: -0.01em; color: var(--ink); margin: 0; }
+
+.fields { display: flex; flex-direction: column; gap: 16px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.label { font: 500 13px/1.3 var(--ui-text); color: var(--ink); }
+.input {
+  width: 100%; background: var(--card); border: 1px solid var(--hair); border-radius: 12px; color: var(--ink);
+  padding: 11px 14px; font: 400 15px/1.3 var(--ui-text); outline: none; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.input:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
+.inputBad, .inputBad:focus { border-color: var(--warn-ink); }
+.hint { font: 400 12.5px/1.45 var(--ui-text); color: var(--sub); }
+
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch {
+  min-width: 52px; height: 34px; padding: 0 14px; border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--av-bg); color: var(--av-ink); font: 600 13px/1 var(--ui-text);
+}
+.swatchOn { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Target schools: read-only here, changed in the Katalog. */
+.targets { display: flex; flex-wrap: wrap; gap: 8px; }
+.target, .target:hover {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px;
+  background: var(--s-tint); color: var(--s-text); font: 500 13px/1 var(--ui-text); white-space: nowrap;
+}
+.targetDot { width: 8px; height: 8px; border-radius: 50%; background: var(--s-bar); flex: none; }
+.targetsEmpty { font: 400 13.5px/1.5 var(--ui-text); color: var(--sub); }
+.linkInline, .linkInline:hover { color: var(--accent); font-weight: 500; }
+
+.rows { display: flex; flex-direction: column; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 8px 0; font: 400 14px/1.45 var(--ui-text); }
+.rowK { color: var(--sub); flex: none; }
+.rowV { color: var(--ink); text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.note { font: 400 13px/1.5 var(--ui-text); color: var(--sub); margin: 12px 0 0; }
+
+.btnStack { display: flex; flex-direction: column; gap: 8px; }
+.actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 20px; border-radius: 999px;
+  font: 500 14px/1.2 var(--ui-text); cursor: pointer; border: 1px solid transparent; white-space: nowrap;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, filter .15s ease;
+}
+.btnPrimary { background: var(--cta-bg); color: var(--cta-ink); font-weight: 600; }
+.btnPrimary:hover { filter: brightness(0.94); }
+.btnGhost { background: transparent; border-color: var(--hair); color: var(--ink); }
+.btnGhost:hover { background: var(--chip); border-color: var(--accent); color: var(--accent); }
+.btnBlock { width: 100%; }
+
+.msg { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1.4 var(--ui-text); }
+.msgOk { color: var(--ok-ink); }
+.msgBad { color: var(--warn-ink); }
+
+.pwForm { display: flex; flex-direction: column; gap: 12px; padding: 14px 0 6px; }
+
+@container (max-width: 720px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 460px) {
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .card { padding: 20px 18px; }
+}

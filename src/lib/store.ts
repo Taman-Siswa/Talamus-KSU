@@ -5,11 +5,6 @@ import type { SchoolId } from '@/data/types';
 
 export const PERSIST_KEY = 'tsprep-v1';
 
-export interface FileMeta {
-  n: string;
-  s: string;
-}
-
 export interface Persisted {
   dark: boolean;
   page: string;
@@ -18,7 +13,6 @@ export interface Persisted {
   sel: Partial<Record<SchoolId, boolean>>;
   checks: Record<string, boolean>;
   forms: Record<string, string>;
-  files: Record<string, FileMeta>;
   grades: Partial<Record<SchoolId, string[][]>>;
   iq: Partial<Record<SchoolId, string>>;
   body: Partial<Record<SchoolId, { tb?: string; bb?: string }>>;
@@ -34,8 +28,6 @@ interface Actions {
   toggleSel: (id: SchoolId) => void;
   toggleCheck: (key: string) => void;
   setForm: (key: string, value: string) => void;
-  setFile: (key: string, meta: FileMeta) => void;
-  clearFile: (key: string) => void;
   setGrade: (id: SchoolId, si: number, ci: number, value: string) => void;
   setIq: (id: SchoolId, value: string) => void;
   setBody: (id: SchoolId, k: 'tb' | 'bb', value: string) => void;
@@ -55,7 +47,6 @@ const defaults: Persisted = {
   sel: { mht: true, pradita: true, ktb: true, tn: true, wardaya: true },
   checks: {},
   forms: {},
-  files: {},
   grades: {},
   iq: {},
   body: {},
@@ -111,12 +102,6 @@ export const useStore = create<Persisted & Actions>()(
       toggleSel: id => set({ sel: { ...get().sel, [id]: !get().sel[id] } }),
       toggleCheck: key => set({ checks: { ...get().checks, [key]: !get().checks[key] } }),
       setForm: (key, value) => set({ forms: { ...get().forms, [key]: value } }),
-      setFile: (key, meta) => set({ files: { ...get().files, [key]: meta } }),
-      clearFile: key => {
-        const files = { ...get().files };
-        delete files[key];
-        set({ files });
-      },
       setGrade: (id, si, ci, value) => {
         const arr = (get().grades[id] || emptyGrades(id)).map(r => r.slice());
         arr[si][ci] = value;

@@ -9,11 +9,27 @@ export const AUTH_KEY = 'tsprep-auth';
 
 export type Role = 'siswa' | 'admin';
 
+/** Avatar color families; the same hues as the school colors, none of them a status color. */
+export const AVATAR_COLORS = ['blue', 'teal', 'purple', 'slate', 'pink'] as const;
+export type AvatarColor = (typeof AVATAR_COLORS)[number];
+
+/** What the account owner edits on Profil. Everything is optional so older accounts still load. */
+export interface Profile {
+  nick?: string;
+  color?: AvatarColor;
+  /** students only */
+  grade?: string;
+  school?: string;
+  year?: string;
+  parent?: string;
+}
+
 export interface User {
   email: string;
   name: string;
   role: Role;
   hash: string;
+  profile?: Profile;
 }
 
 /** Where each role lands after signing in. */
@@ -32,6 +48,9 @@ interface AuthState {
   register: (name: string, email: string, password: string) => Promise<string | null>;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
+  /** Profil: name and profile fields of the signed-in account */
+  updateProfile: (name: string, profile: Profile) => string | null;
+  changePassword: (current: string, next: string) => Promise<string | null>;
 }
 
 const norm = (email: string) => email.trim().toLowerCase();
@@ -73,6 +92,23 @@ export const useAuth = create<AuthState>()(
         return null;
       },
       logout: () => set({ session: null }),
+      updateProfile: (name, profile) => {
+        const n = name.trim(), e = get().session;
+        if (!n) return 'Nama lengkap wajib diisi.';
+        if (!e) return 'Kamu belum masuk.';
+        set({ users: get().users.map(u => (u.email === e ? { ...u, name: n, profile } : u)) });
+        return null;
+      },
+      changePassword: async (current, next) => {
+        const e = get().session;
+        const user = get().users.find(u => u.email === e);
+        if (!e || !user) return 'Kamu belum masuk.';
+        if (user.hash !== (await hash(e, current))) return 'Password lama salah.';
+        if (next.length < 6) return 'Password baru minimal 6 karakter.';
+        const h = await hash(e, next);
+        set({ users: get().users.map(u => (u.email === e ? { ...u, hash: h } : u)) });
+        return null;
+      },
     }),
     {
       name: AUTH_KEY,

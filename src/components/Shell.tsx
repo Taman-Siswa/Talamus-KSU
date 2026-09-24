@@ -7,7 +7,7 @@ import { ensureAdminSeed, homeFor, roleOf, useAuth, useCurrentUser, type Role } 
 import { trackPath } from '@/lib/nav';
 import { useSchoolsStore } from '@/lib/schools';
 import { activateUser, useStore } from '@/lib/store';
-import { STUDENT, initials } from '@/data/student';
+import { accountMeta, initials } from '@/data/student';
 import Icon, { type IconName } from './Icon';
 import css from './Shell.module.css';
 
@@ -34,6 +34,8 @@ const SHARED_PAGES = ['/profil'];
 // the admin account keeps its own student-side progress (targets, checks, grades) apart from any student.
 const isStudentPath = (p: string) => !isAdminPath(p) && !AUTH_PAGES.includes(p) && !SHARED_PAGES.includes(p);
 const PREVIEW_LABEL = 'Pratinjau tampilan siswa';
+// Matches the drawer breakpoint in Shell.module.css.
+const MOBILE = '(max-width: 860px)';
 
 function NavLink({ item: n, pathname, onClick }: { item: NavItem; pathname: string; onClick: () => void }) {
   const active = pathname === n.href || pathname.startsWith(n.href + '/');
@@ -60,6 +62,14 @@ export default function Shell({ children }: { children: ReactNode }) {
   const setDark = useStore(s => s.setDark);
   const setPage = useStore(s => s.setPage);
   const [sbOpen, setSbOpen] = useState(false);
+  // Desktop only: the sidebar folds into an icon rail, saved with the account's other settings.
+  const sbMin = useStore(s => s.sbMin);
+  const toggleSbMin = useStore(s => s.toggleSbMin);
+  const toggleMin = () => {
+    // In the mobile drawer the same button just closes it.
+    if (window.matchMedia(MOBILE).matches) setSbOpen(false);
+    else toggleSbMin();
+  };
 
   useEffect(() => {
     useSchoolsStore.persist.rehydrate();
@@ -102,73 +112,108 @@ export default function Shell({ children }: { children: ReactNode }) {
 
   const close = () => setSbOpen(false);
   const onProfil = pathname === '/profil';
-  const name = user?.name || STUDENT.name;
-  const meta = role === 'admin' ? 'Admin · TamanSchool' : STUDENT.meta;
+  const name = user?.name || '';
+  const meta = accountMeta(user);
+  const avatarColor = user?.profile?.color;
+  // Student pages use the "Design system v2 Murid" frame, also when an admin previews them;
+  // the sidebar follows the role, so an admin always keeps the way back to Database SMA.
+  const studentFrame = role === 'siswa' || previewing;
 
   const blocked = !session && !isAuthPage;
   if (!authHydrated || blocked || (session && isAuthPage) || wrongSide) return <div className={css.root} />;
   if (isAuthPage) return <div className={css.authRoot}>{children}</div>;
 
+  const modeToggle = (
+    // Label and icon show the current mode; clicking switches to the other one.
+    <button type="button" className={css.nav} onClick={() => setDark(!dark)} role="switch" aria-checked={dark}
+      title={dark ? 'Mode gelap aktif. Klik untuk ganti ke mode terang' : 'Mode terang aktif. Klik untuk ganti ke mode gelap'}>
+      <Icon name={dark ? 'moon' : 'sun'} />
+      <span className={css.label}>{dark ? 'Mode gelap' : 'Mode terang'}</span>
+    </button>
+  );
+  const menuButton = (
+    <button type="button" className={[css.iconBtn, css.collapse].join(' ')} title="Ciutkan / lebarkan menu"
+      aria-label="Ciutkan / lebarkan menu" aria-expanded={!sbMin} onClick={toggleMin}>
+      <Icon name="menu" size={role === 'admin' ? 20 : 17} stroke={role === 'admin' ? 1.6 : 1.7} />
+    </button>
+  );
+  const logo = (
+    <>
+      {/* eslint-disable @next/next/no-img-element */}
+      <img src="/assets/logo-tamanschool-full.svg" alt="tamanSchool" className={[css.brandmark, css.logoLight].join(' ')} />
+      <img src="/assets/logo-tamanschool-beige.svg" alt="tamanSchool" className={[css.brandmark, css.logoDark].join(' ')} />
+      {/* eslint-enable @next/next/no-img-element */}
+    </>
+  );
+
   return (
-    <div className={css.root}>
+    <div className={[css.root, sbMin ? css.mini : '', role === 'siswa' ? css.student : ''].join(' ')}>
       <aside className={[css.sidebar, sbOpen ? css.open : ''].join(' ')} aria-label="Navigasi utama">
-        <div className={css.brandRow}>
-          <div className={css.brand}>
-            {/* eslint-disable @next/next/no-img-element */}
-            <img src="/assets/logo-tamanschool-full.svg" alt="tamanSchool" className={[css.brandmark, css.logoLight].join(' ')} />
-            <img src="/assets/logo-tamanschool-beige.svg" alt="tamanSchool" className={[css.brandmark, css.logoDark].join(' ')} />
-            {/* eslint-enable @next/next/no-img-element */}
-            <div className={css.role}>{role === 'admin' ? 'KSU Admin' : 'KSU'}</div>
-          </div>
-          <button type="button" className={[css.iconBtn, css.collapse].join(' ')} title="Tutup menu"
-            aria-label="Tutup menu" onClick={close}>
-            <Icon name="menu" size={20} />
-          </button>
-        </div>
-        <nav className={css.scroll}>
-          {NAV[role].map(n => <NavLink key={n.href} item={n} pathname={pathname} onClick={close} />)}
-          {role === 'admin' ? (
-            <>
+        {role === 'admin' ? (
+          <>
+            <div className={css.brandRow}>
+              <div className={css.brand}>
+                {logo}
+                <div className={css.role}>KSU Admin</div>
+              </div>
+              {menuButton}
+            </div>
+            <nav className={css.scroll}>
+              {NAV.admin.map(n => <NavLink key={n.href} item={n} pathname={pathname} onClick={close} />)}
               <div className={css.navGroup}><Icon name="eye" size={14} />{PREVIEW_LABEL}</div>
               {NAV.siswa.map(n => <NavLink key={n.href} item={n} pathname={pathname} onClick={close} />)}
-            </>
-          ) : null}
-        </nav>
-        <div className={css.foot}>
-          {/* Label and icon show the current mode; clicking switches to the other one. */}
-          <button type="button" className={css.nav} onClick={() => setDark(!dark)} role="switch" aria-checked={dark}
-            title={dark ? 'Mode gelap aktif. Klik untuk ganti ke mode terang' : 'Mode terang aktif. Klik untuk ganti ke mode gelap'}>
-            <Icon name={dark ? 'moon' : 'sun'} />
-            <span className={css.label}>{dark ? 'Mode gelap' : 'Mode terang'}</span>
-          </button>
-          {/* The account block is the way into Profil, where Keluar lives. */}
-          <Link href="/profil" onClick={close} aria-label={'Profil ' + name} aria-current={onProfil ? 'page' : undefined}
-            className={[css.nav, css.acct, onProfil ? css.navActive : ''].join(' ')}>
-            <div className={css.avatar}>{initials(name)}</div>
-            <div className={css.who}>
-              <div className={css.name}>{name}</div>
-              <div className={css.meta}>{meta}</div>
+            </nav>
+            <div className={css.foot}>
+              {modeToggle}
+              {/* Drawn like the design's plain account block, but still the way into Profil, where Keluar lives. */}
+              <Link href="/profil" onClick={close} title={name} aria-label={'Profil ' + name} aria-current={onProfil ? 'page' : undefined}
+                className={[css.nav, css.acct, onProfil ? css.acctActive : ''].join(' ')}>
+                <div className={css.avatar} data-av={avatarColor}>{initials(name)}</div>
+                <div className={css.who}>
+                  <div className={css.name}>{name}</div>
+                  <div className={css.meta}>{meta}</div>
+                </div>
+              </Link>
             </div>
-            <Icon name="chevronRight" size={16} />
-          </Link>
-        </div>
+          </>
+        ) : (
+          <>
+            {/* Student design: the account sits on top (and opens Profil, where Keluar lives), mode toggle at the bottom. */}
+            <div className={css.stHead}>
+              <Link href="/profil" onClick={close} title={name} aria-label={'Profil ' + name} aria-current={onProfil ? 'page' : undefined}
+                className={[css.stWho, onProfil ? css.stWhoOn : ''].join(' ')}>
+                <div className={css.stAvatar} data-av={avatarColor}>{initials(name)}</div>
+                <div className={css.who}>
+                  <div className={css.stName}>{name}</div>
+                  <div className={css.stMeta}>{meta}</div>
+                </div>
+              </Link>
+              {menuButton}
+            </div>
+            <nav className={css.scroll}>
+              {NAV.siswa.map(n => <NavLink key={n.href} item={n} pathname={pathname} onClick={close} />)}
+            </nav>
+            {modeToggle}
+          </>
+        )}
       </aside>
       {sbOpen && <div className={css.scrim} onClick={close} aria-hidden="true" />}
 
-      <main className={css.main}>
-        <header className={css.top}>
+      <main className={[css.main, studentFrame ? css.stMain : css.adminMain].join(' ')}>
+        <header className={studentFrame ? css.stTop : css.top}>
           <button type="button" className={[css.iconBtn, css.burger].join(' ')} aria-label="Buka menu" aria-expanded={sbOpen}
             onClick={() => setSbOpen(o => !o)}>
-            <Icon name="menu" size={22} />
+            <Icon name="menu" size={studentFrame ? 20 : 22} />
           </button>
+          {studentFrame ? <span className={css.stLogo}>{logo}</span> : null}
         </header>
-        {/* Saved state, school data and "today" only exist in the browser, so pages render after hydration. */}
         {previewing ? (
           <div className={css.previewBar} role="note">
             <Icon name="eye" size={16} />
             <span>{PREVIEW_LABEL}. Yang tampil adalah data yang sudah disimpan, bukan draft. Target dan centang di sini milik akun admin, bukan siswa.</span>
           </div>
         ) : null}
+        {/* Saved state, school data and "today" only exist in the browser, so pages render after hydration. */}
         <div className={css.content}>{hydrated && schoolsHydrated ? children : null}</div>
       </main>
     </div>
