@@ -1,7 +1,7 @@
 'use client';
 
 import type { School } from '@/data/types';
-import { P, startOfToday } from '@/lib/dates';
+import { P, dlLabel, startOfToday } from '@/lib/dates';
 import { useStore } from '@/lib/store';
 import Icon from './Icon';
 import css from './ui.module.css';
@@ -19,7 +19,7 @@ export default function ChecklistCard({ school: S }: { school: School }) {
   return (
     <div className={css.card} data-school={S.id}>
       <div className={css.cardHead}>
-        <div className={css.cardTitle}>Checklist persiapan</div>
+        <div className={css.cardTitle}>Checklist berkas</div>
         <span className={css.progPill}>{done} dari {total} selesai</span>
       </div>
       <div className={css.track}>
@@ -48,7 +48,7 @@ export default function ChecklistCard({ school: S }: { school: School }) {
                   </div>
                 )}
               </div>
-              <span className={[css.pill, overdue ? css.warn : ''].join(' ')}>{c.d}</span>
+              <span className={[css.pill, overdue ? css.warn : ''].join(' ')}>{dlLabel(c.dl, c.est)}</span>
             </div>
           );
         })}

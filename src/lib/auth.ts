@@ -45,7 +45,7 @@ interface AuthState {
   session: string | null;
   hydrated: boolean;
   /** each resolves to an error message, or null on success */
-  register: (name: string, email: string, password: string) => Promise<string | null>;
+  register: (form: { name: string; school: string; email: string; password: string; confirm: string }) => Promise<string | null>;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
   /** Profil: name and profile fields of the signed-in account */
@@ -74,13 +74,16 @@ export const useAuth = create<AuthState>()(
       session: null,
       hydrated: false,
       // Self-registration always creates a student.
-      register: async (name, email, password) => {
-        const e = norm(email), n = name.trim();
-        if (!n) return 'Nama wajib diisi.';
+      register: async ({ name, school, email, password, confirm }) => {
+        const e = norm(email), n = name.trim(), sc = school.trim();
+        if (!n) return 'Nama lengkap wajib diisi.';
+        if (!sc) return 'Sekolah asal wajib diisi.';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return 'Format email tidak valid.';
         if (password.length < 6) return 'Password minimal 6 karakter.';
+        // No "lupa password" without a server, so a typo here would lock the account for good.
+        if (password !== confirm) return 'Konfirmasi password belum sama.';
         if (get().users.some(u => u.email === e)) return 'Email ini sudah terdaftar. Silakan masuk.';
-        const user: User = { email: e, name: n, role: 'siswa', hash: await hash(e, password) };
+        const user: User = { email: e, name: n, role: 'siswa', hash: await hash(e, password), profile: { school: sc } };
         set({ users: [...get().users, user], session: e });
         return null;
       },

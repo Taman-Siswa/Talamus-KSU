@@ -13,10 +13,10 @@ export interface Calc {
 export interface ChecklistItem {
   id: string;
   l: string;
-  /** deadline label shown in the pill */
-  d: string;
-  /** deadline ISO date, used for overdue detection */
+  /** deadline date; the pill shows it formatted (see `dlLabel` in lib/dates.ts), also used for overdue detection */
   dl: string;
+  /** true when `dl` is inferred from last year's cycle rather than officially announced — the pill gets a "±" */
+  est?: boolean;
   note?: string;
   f?: { k: string; p: string }[];
 }

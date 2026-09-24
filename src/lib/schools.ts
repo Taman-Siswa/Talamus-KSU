@@ -31,6 +31,12 @@ interface SchoolsState {
 
 export const isBundledSchool = (id: SchoolId) => SCHOOLS.some(s => s.id === id);
 
+/** The bundled record for a school, before any admin edits — what "Kembalikan ke data bawaan" restores. */
+export const bundledDefault = (id: SchoolId): School | null => {
+  const s = SCHOOLS.find(b => b.id === id);
+  return s ? normalize(s) : null;
+};
+
 /** A fresh id for a school the admin adds. */
 export const newSchoolId = () => 'sekolah-' + Math.random().toString(36).slice(2, 8);
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChecklistItem, ReqCategory, Requirement, School, SchoolInfo } from '@/data/types';
-import { inferPhaseType, isBundledSchool, newSchoolId, reqCategory, useSchoolsStore } from '@/lib/schools';
+import { bundledDefault, inferPhaseType, isBundledSchool, newSchoolId, reqCategory, useSchoolsStore } from '@/lib/schools';
 import Icon from '../Icon';
 import css from './admin.module.css';
 import {
@@ -136,6 +136,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
       const name = `tahap ${i + 1}${p.l ? ' (' + p.l + ')' : ''}`;
       return !p.s ? name + ' belum punya tanggal mulai' : endsEarly(p) ? name + ' selesai sebelum mulai' : false;
     }),
+    ...draft.checklist.map((c, i) => !c.dl && `item checklist ${i + 1}${c.l ? ' (' + c.l + ')' : ''} belum punya tanggal tenggat`),
   ].filter((x): x is string => !!x);
 
   // Publishing returns to the school list. A draft keeps the admin on the form, and the first draft
@@ -172,6 +173,10 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
 
   const onReset = () => {
     reset(school.id);
+    // Without this the form kept showing the old (overridden) values, so a later "Simpan" would
+    // silently re-save them and undo the reset — refresh the form to the restored bundled data too.
+    const def = bundledDefault(school.id);
+    if (def) setDraft(def);
     setSaved(false);
   };
 
@@ -446,10 +451,10 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
         </Field>
       </Section>
 
-      <Section id="checklist" title="Checklist persiapan" icon="navChecklist" status={status.checklist}
+      <Section id="checklist" title="Checklist berkas" icon="navChecklist" status={status.checklist}
         collapsible open={!!open.checklist} onToggle={() => toggle('checklist')}>
         <RepeatList items={draft.checklist} onChange={v => set('checklist', v)}
-          blank={(): ChecklistItem => ({ id: 'item-' + Date.now().toString(36), l: '', d: '', dl: '' })}
+          blank={(): ChecklistItem => ({ id: 'item-' + Date.now().toString(36), l: '', dl: '' })}
           addLabel="Tambah item checklist" rowLabel={item => item.l || 'Item baru'} empty="Belum ada item."
           render={(item, setItem) => {
             const fields = item.f || [];
@@ -459,13 +464,13 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
                 <Field label="Judul tugas">
                   <TextInput value={item.l} onChange={v => setItem({ l: v, id: item.l ? item.id : slug(v) })} placeholder="Surat keterangan sehat dari dokter" medium />
                 </Field>
-                <div className={[css.grid3, css.gap].join(' ')}>
+                <div className={[css.grid2, css.gap].join(' ')}>
                   <Field label="Catatan"><TextInput value={item.note || ''} onChange={v => setItem({ note: v })} placeholder="Baris kecil di bawah judul" /></Field>
-                  <Field label="Teks tenggat"><TextInput value={item.d} onChange={v => setItem({ d: v })} placeholder="±2 Feb 2027" /></Field>
-                  <Field label="Tanggal tenggat"><TextInput type="date" value={item.dl} onChange={v => setItem({ dl: v })} /></Field>
+                  <Field label="Tanggal tenggat" required><TextInput type="date" value={item.dl} onChange={v => setItem({ dl: v })} /></Field>
                 </div>
                 <div className={css.rowTools}>
                   <AddButton onClick={() => setFields([...fields, { k: '', p: '' }])}>Tambah kolom isian siswa</AddButton>
+                  <Switch checked={!!item.est} label="Tanggal masih perkiraan" onChange={v => setItem({ est: v })} />
                 </div>
                 {fields.map((f, j) => (
                   <div key={j} className={css.fieldRow}>

@@ -10,7 +10,9 @@ export default function AuthForm({ mode }: { mode: 'login' | 'daftar' }) {
   const isLogin = mode === 'login';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [school, setSchool] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
@@ -19,7 +21,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'daftar' }) {
     e.preventDefault();
     setBusy(true);
     const { login, register } = useAuth.getState();
-    const err = isLogin ? await login(email, password) : await register(name, email, password);
+    const err = isLogin ? await login(email, password) : await register({ name, school, email, password, confirm });
     // On success Shell's route guard redirects to the dashboard.
     setError(err);
     setBusy(false);
@@ -44,6 +46,13 @@ export default function AuthForm({ mode }: { mode: 'login' | 'daftar' }) {
             <input className={css.input} value={name} onChange={e => setName(e.target.value)} autoComplete="name" required />
           </label>
         )}
+        {!isLogin && (
+          <label className={css.field}>
+            <span className={css.label}>Sekolah asal</span>
+            <input className={css.input} value={school} onChange={e => setSchool(e.target.value)} placeholder="Contoh: SMP Negeri 1 Jakarta"
+              autoComplete="organization" required />
+          </label>
+        )}
         <label className={css.field}>
           <span className={css.label}>Email</span>
           <input className={css.input} type="email" placeholder="nama@email.com" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required />
@@ -61,6 +70,13 @@ export default function AuthForm({ mode }: { mode: 'login' | 'daftar' }) {
           </span>
           {!isLogin && <span className={css.hint}>Minimal 6 karakter.</span>}
         </label>
+        {!isLogin && (
+          <label className={css.field}>
+            <span className={css.label}>Konfirmasi password</span>
+            <input className={css.input} type={show ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)}
+              placeholder="Ketik ulang password" autoComplete="new-password" required />
+          </label>
+        )}
         <button className={css.submit} type="submit" disabled={busy}>{busy ? 'Memeriksa...' : isLogin ? 'Masuk' : 'Daftar'}</button>
         <p className={css.alt}>
           {isLogin ? 'Belum punya akun? ' : 'Sudah punya akun? '}

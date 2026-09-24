@@ -10,6 +10,12 @@ export const startOfToday = () => {
 
 export const fmt = (d: Date, y?: boolean) => d.getDate() + ' ' + MO[d.getMonth()] + (y ? ' ' + d.getFullYear() : '');
 
+/**
+ * A checklist item's deadline pill: one consistent "D Mon YYYY" format, "±" prefixed when `est` (inferred,
+ * not confirmed). Blank until the admin actually picks a date — a new item has none yet.
+ */
+export const dlLabel = (dl: string, est?: boolean) => (dl ? (est ? '±' : '') + fmt(P(dl), true) : '');
+
 export const fmtR = (a: string, b: string) => {
   const A = P(a), B = P(b);
   if (a === b) return fmt(A, true);
