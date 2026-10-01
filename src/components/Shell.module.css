@@ -58,11 +58,6 @@
 /* The top row only exists on mobile, for the burger; on desktop the page starts 32px from the top. */
 .top { display: none; }
 .burger { display: none; }
-.previewBar {
-  width: 100%; max-width: 1040px; margin: 32px auto -16px; padding: 0 48px; display: flex; align-items: flex-start; gap: 10px;
-  font: 500 13px/1.5 var(--font-text); color: var(--nav-sel-ink);
-}
-.previewBar > svg { flex: none; margin-top: 2px; }
 .content { width: 100%; max-width: 1040px; margin: 0 auto; padding: 32px 48px 96px; }
 
 /* Admin pages keep the admin type ("Design system v2"); ui.module.css reads these on the shared Profil page. */
@@ -76,7 +71,6 @@
 }
 .stLogo { display: flex; margin-left: auto; }
 .stLogo .brandmark { height: 18px; opacity: 0.85; }
-.stMain .previewBar { max-width: 1020px; padding: 0 34px; margin: -4px auto 18px; }
 .stMain .content { max-width: 1020px; padding: 0 34px 90px; }
 
 /* Student sidebar: account on top, flat 10px-radius nav, mode toggle at the bottom. */
@@ -122,11 +116,9 @@
   .scrim { display: block; position: fixed; inset: 0; z-index: 99; background: var(--scrim); }
   .burger { display: grid; margin-left: -8px; }
   .top { display: flex; align-items: center; padding: 16px 16px 0; }
-  .previewBar { margin: 16px auto -4px; padding: 0 16px; }
   .content { padding: 8px 16px 96px; }
   .student .sidebar { width: 250px; }
   .stTop { padding: 16px 16px 0; min-height: 0; margin-bottom: 14px; }
-  .stMain .previewBar { padding: 0 16px; margin: 0 auto 14px; }
   .stMain .content { padding: 0 16px 90px; }
 }
 

@@ -1,4 +1,4 @@
-/** Bundled schools use short codes ('tn', 'mht', …); schools the admin adds get 'sekolah-<random>'. */
+/** Schools the admin adds get 'sekolah-<random>' identifiers. */
 export type SchoolId = string;
 
 export type PhaseType = 'daftar' | 'tes' | 'umum';
@@ -18,10 +18,16 @@ export interface ChecklistItem {
   /** true when `dl` is inferred from last year's cycle rather than officially announced — the pill gets a "±" */
   est?: boolean;
   note?: string;
+  /** Present for a required document; absent for an ordinary preparation task. */
+  document?: {
+    required: boolean;
+    rules: { format: string; maxMB: string }[];
+    template: string;
+  };
   f?: { k: string; p: string }[];
 }
 
-/** Mirrors the properties of a school page in the marketing team's Notion catalog, under the same names. */
+/** School profile; spreadsheet additions are optional so existing saved records still load. */
 export interface SchoolInfo {
   kind: '' | 'Negeri' | 'Swasta';
   founded: string;
@@ -34,6 +40,14 @@ export interface SchoolInfo {
   /** Notion's "Kuota/angkatan" */
   quota: string;
   contact: string;
+  city?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  admissionSystem?: string;
+  admissionYear?: string;
+  quotas?: { year: string; seats: string }[];
 }
 
 export type ReqCategory = 'Akademik' | 'Kesehatan' | 'Administrasi' | 'Domisili' | 'Usia' | 'Prestasi' | 'Lainnya';
@@ -45,6 +59,7 @@ export type ReqCategory = 'Akademik' | 'Kesehatan' | 'Administrasi' | 'Domisili'
 export interface Requirement {
   k: string;
   v: string;
+  group?: 'utama' | 'akademis' | 'fisik';
   cat?: ReqCategory | '';
   det?: Record<string, string>;
 }
@@ -71,7 +86,7 @@ export interface School {
   noGradeNote?: string;
   bodyNote?: string;
   /** Notion's "Alur Pendaftaran": Gantt bars, the stage list, and (via keyDatesOf) the deadline list; est = date is a prediction */
-  phases: { l: string; s: string; e: string; t: PhaseType; est?: boolean }[];
+  phases: { l: string; s: string; e: string; t: PhaseType; est?: boolean; group?: string; mode?: string; location?: string; details?: string }[];
   checklist: ChecklistItem[];
   docs: { l: string; m: string; h: string; arsip: boolean }[];
   faq: { q: string; a: string }[];

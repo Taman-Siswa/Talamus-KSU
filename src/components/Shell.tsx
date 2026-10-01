@@ -207,12 +207,6 @@ export default function Shell({ children }: { children: ReactNode }) {
           </button>
           {studentFrame ? <span className={css.stLogo}>{logo}</span> : null}
         </header>
-        {previewing ? (
-          <div className={css.previewBar} role="note">
-            <Icon name="eye" size={16} />
-            <span>{PREVIEW_LABEL}. Yang tampil adalah data yang sudah disimpan, bukan draft. Target dan centang di sini milik akun admin, bukan siswa.</span>
-          </div>
-        ) : null}
         {/* Saved state, school data and "today" only exist in the browser, so pages render after hydration. */}
         <div className={css.content}>{hydrated && schoolsHydrated ? children : null}</div>
       </main>

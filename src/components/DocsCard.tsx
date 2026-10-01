@@ -1,5 +1,6 @@
 import type { School } from '@/data/types';
 import Icon from './Icon';
+import { isWebUrl } from '@/lib/school-form';
 import css from './ui.module.css';
 
 export default function DocsCard({ school: S }: { school: School }) {
@@ -16,7 +17,7 @@ export default function DocsCard({ school: S }: { school: School }) {
               <div className={css.docMeta}>{d.m}</div>
             </div>
             <span className={[css.pill, d.arsip ? css.amb : css.ok].join(' ')}>{d.arsip ? 'Arsip tahun lalu' : 'Resmi'}</span>
-            <a href={d.h} target="_blank" rel="noopener noreferrer" className={css.docOpen}>Buka</a>
+            {isWebUrl(d.h) ? <a href={d.h} target="_blank" rel="noopener noreferrer" className={css.docOpen}>Buka</a> : <span className={css.docMeta}>Tautan belum valid</span>}
           </div>
         ))}
       </div>

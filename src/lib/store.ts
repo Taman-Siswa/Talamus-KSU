@@ -42,9 +42,9 @@ const emptyGrades = (id: SchoolId) => {
 const defaults: Persisted = {
   dark: false,
   page: 'checklist',
-  fSchool: 'mht',
+  fSchool: '',
   sbMin: false,
-  sel: { mht: true, pradita: true, ktb: true, tn: true, wardaya: true },
+  sel: {},
   checks: {},
   forms: {},
   grades: {},
@@ -72,6 +72,12 @@ const flatStorage: PersistStorage<Persisted> = {
       PERSISTED_KEYS.forEach(k => {
         if (raw[k] !== undefined && raw[k] !== null) state[k] = raw[k];
       });
+      // Retire the removed demo school's saved selection and progress on account load.
+      if (state.fSchool === 'wardaya') state.fSchool = '';
+      for (const key of ['sel', 'grades', 'iq', 'body', 'prestasi', 'checks', 'forms']) {
+        const values = state[key] as Record<string, unknown>;
+        state[key] = Object.fromEntries(Object.entries(values).filter(([id]) => id !== 'wardaya' && !id.startsWith('wardaya.')));
+      }
       if (raw.v !== 2) state.dark = defaults.dark;
       if (!state.page || state.page === 'overview' || state.page === 'dash') state.page = 'checklist';
       return { state: state as unknown as Persisted, version: 2 };

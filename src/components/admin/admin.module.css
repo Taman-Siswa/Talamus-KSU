@@ -177,8 +177,6 @@
 
 /* ---------- buttons ---------- */
 .foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
-.footNote { flex-basis: 100%; font: 400 13px/1.5 var(--font-text); color: var(--sub); margin: 0; }
-.footWhy { flex-basis: 100%; font: 400 14px/1.5 var(--font-text); color: var(--warn-ink); margin: 0; }
 .saved { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1.4 var(--font-text); color: var(--ok-ink); background: var(--ok-bg); padding: 6px 12px; border-radius: var(--r-pill); }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; padding: 10px 20px;
@@ -201,3 +199,21 @@
   .section { padding: 20px 16px; }
   .title { font-size: 28px; }
 }
+
+.progressPill { text-decoration: none; }
+.progressPill:hover, .progressPill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.subsection { border-top: 1px solid var(--hair); padding-top: 16px; }
+.subsection > summary { cursor: pointer; font-weight: 600; color: var(--ink); padding: 8px 0; }
+.subsection[open] > :not(summary) { margin-top: 16px; }
+.documentFields { display: grid; gap: 16px; padding: 16px; background: var(--chip); border-radius: var(--r-sm); margin-top: 12px; }
+.preview { margin-top: 28px; border-top: 2px solid var(--accent); padding-top: 20px; }
+.preview > .intro { margin-bottom: 20px; }
+@media (max-width: 600px) {
+  .sectionHead { flex-wrap: wrap; }
+  .sectionHead > .pill { margin-left: 30px; }
+}
+
+.advanced > summary { cursor: pointer; color: var(--ink); font: 700 20px/1.4 var(--font-display); }
+.advanced > summary > span { display: block; margin-top: 4px; color: var(--sub); font: 400 13px/1.5 var(--font-text); }
+.advancedRow { display: grid; gap: 12px; margin-top: 12px; }
+.inlineLink { display: inline; border: 0; background: none; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }

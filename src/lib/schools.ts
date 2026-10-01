@@ -25,7 +25,7 @@ interface SchoolsState {
   saveDraft: (school: School) => void;
   discardDraft: (id: SchoolId) => void;
   reset: (id: SchoolId) => void;
-  /** Only schools the admin created can be removed; the 5 bundled ones are baked into the app. */
+  /** Bundled records, if any, cannot be removed through the admin form. */
   remove: (id: SchoolId) => void;
 }
 
@@ -113,6 +113,14 @@ export const useSchoolsStore = create<SchoolsState>()(
     }),
     {
       name: SCHOOLS_KEY,
+      version: 1,
+      migrate: persisted => {
+        const old = persisted as Partial<SchoolsState>;
+        const keep = (records: SchoolsState['drafts'] = {}) => Object.fromEntries(
+          Object.entries(records).filter(([id]) => id !== 'wardaya'),
+        );
+        return { ...old, overrides: keep(old.overrides), drafts: keep(old.drafts), added: (old.added || []).filter(s => s.id !== 'wardaya') };
+      },
       skipHydration: true,
       partialize: s => ({ overrides: s.overrides, added: s.added, drafts: s.drafts }),
       onRehydrateStorage: () => () => useSchoolsStore.setState({ hydrated: true }),
