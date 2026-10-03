@@ -1,0 +1,98 @@
+/* Forum ("Murid v3"): school spaces, composer, sort chips, expandable question cards. */
+.layout { display: flex; gap: 22px; align-items: flex-start; }
+.spaces { flex: 0 0 200px; position: sticky; top: 84px; display: flex; flex-direction: column; gap: 2px; }
+.spacesTitle { font: 700 11.5px/1.2 var(--font-text); letter-spacing: 0.075em; color: var(--sub); padding: 4px 10px 8px; }
+.space {
+  display: flex; align-items: center; gap: 10px; border: none; cursor: pointer; background: transparent; color: var(--ink);
+  border-radius: 10px; padding: 8px 10px; text-align: left; font: 500 14px/1.3 var(--font-text);
+}
+.space:hover { background: var(--chip); }
+.spaceOn { background: var(--nav-sel); color: var(--nav-sel-ink); }
+.spaceMono { width: 28px; height: 28px; flex: none; border-radius: 8px; background: var(--s-tint); color: var(--s-text); display: flex; align-items: center; justify-content: center; font: 700 9.5px/1 var(--font-text); }
+.spaceAll { background: var(--chip); color: var(--ink); }
+.spaceName { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spaceCount { flex: none; font: 600 12px/1 var(--font-text); color: var(--sub); }
+
+.main { flex: 1; min-width: 0; max-width: 680px; display: flex; flex-direction: column; gap: 10px; }
+.mainFull { max-width: none; }
+.composer { background: var(--card); border: 1px solid var(--hair); border-radius: 16px; padding: 12px 14px 6px; }
+.composerRow { display: flex; gap: 10px; align-items: center; }
+.avatar { width: 38px; height: 38px; flex: none; border-radius: 999px; background: var(--brand-bg); color: var(--brand-ink); display: flex; align-items: center; justify-content: center; font: 700 12px/1 var(--font-text); }
+.composerInput {
+  flex: 1; min-width: 0; border: 1px solid var(--hair); background: var(--bg); border-radius: 999px; padding: 11px 16px;
+  font: 400 15px/1.3 var(--font-text); color: var(--ink); outline: none;
+}
+.composerInput:focus { border-color: var(--accent); }
+.composerMore { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 0 4px 48px; }
+.pick { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--hair); border-radius: 999px; padding: 7px 12px; cursor: pointer; }
+.pick select { border: none; background: transparent; color: var(--ink); font: 600 13px/1.2 var(--font-text); outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; field-sizing: content; }
+.spacer { flex: 1; }
+.textBtn { border: none; background: transparent; cursor: pointer; color: var(--sub); font: 600 13.5px/1 var(--font-text); padding: 10px 12px; }
+.send { border: none; cursor: pointer; background: var(--cta-bg); color: var(--cta-ink); font: 600 13.5px/1 var(--font-text); padding: 10px 18px; border-radius: 999px; }
+.send:hover { background: var(--cta-hover); }
+.send:disabled { background: var(--chip); color: var(--faint); cursor: not-allowed; }
+
+.sorts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 2px; }
+.sort {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--hair); cursor: pointer; background: var(--card); color: var(--ink);
+  border-radius: 999px; padding: 7px 13px; font: 600 13px/1 var(--font-text);
+}
+.sort:hover { background: var(--chip); }
+.sortOn { background: var(--nav-sel); border-color: var(--cta-bg); color: var(--nav-sel-ink); }
+
+.list { display: flex; flex-direction: column; gap: 12px; }
+.thread { background: var(--card); border-radius: 20px; box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid var(--hair-soft); }
+.threadOpen { border-color: #B9DDB5; }
+:global([data-theme='dark']) .threadOpen { border-color: #3C5A37; }
+.threadOpen .head, .threadOpen .head:hover { background: var(--ok-bg); }
+.head { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; border: none; background: transparent; padding: 18px 22px; cursor: pointer; color: inherit; }
+.head:hover { background: var(--chip); }
+.headMain { flex: 1; min-width: 0; }
+.tag { display: inline-block; margin-bottom: 8px; background: var(--s-tint); color: var(--s-text); font: 600 11.5px/1 var(--font-text); padding: 5px 9px; border-radius: 999px; }
+.q { font: 700 16.5px/1.4 var(--font-display); color: var(--ink); text-wrap: pretty; }
+.metaRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.stOk { font: 500 12.5px/1 var(--font-text); color: var(--ok-ink); }
+.stNone { font: 500 12.5px/1 var(--font-text); color: var(--sub); }
+.by { font: 400 12.5px/1.3 var(--font-text); color: var(--sub); }
+.by strong { font-weight: 600; color: var(--ink); }
+.vote {
+  flex: none; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 52px; border: 1px solid var(--hair);
+  background: transparent; color: var(--ink); border-radius: 14px; padding: 7px 8px; cursor: pointer; font: 700 13px/1 var(--font-text);
+}
+.vote:hover { border-color: var(--cta-bg); }
+.voteOn { background: var(--nav-sel); border-color: var(--cta-bg); color: var(--nav-sel-ink); }
+.chev { flex: none; width: 32px; height: 32px; border-radius: 999px; background: var(--chip); color: var(--ink); display: flex; align-items: center; justify-content: center; transition: transform 180ms ease; }
+.chevOpen { transform: rotate(180deg); }
+.body { padding: 0 22px 18px; }
+.ansLabel { font: 700 11.5px/1.2 var(--font-text); letter-spacing: 0.075em; color: var(--sub); border-top: 1px solid var(--hair-soft); padding-top: 14px; }
+.none { background: var(--chip); border-radius: 12px; padding: 10px 12px; margin-top: 10px; font: 400 13.5px/1.4 var(--font-text); color: var(--sub); }
+.ans { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--hair-soft); }
+.ansVote { flex: none; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 44px; border: 1px solid var(--hair); background: transparent; color: var(--ink); border-radius: 12px; padding: 7px 0; cursor: pointer; align-self: flex-start; font: 700 13px/1 var(--font-text); }
+.ansVote:hover { border-color: var(--cta-bg); }
+.ansMain { flex: 1; min-width: 0; }
+.topTag { display: inline-flex; align-items: center; gap: 5px; font: 700 10.5px/1 var(--font-text); letter-spacing: 0.075em; color: var(--accent); margin-bottom: 8px; }
+.who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ansAvatar { width: 28px; height: 28px; flex: none; border-radius: 999px; background: var(--chip); color: var(--ink); display: flex; align-items: center; justify-content: center; font: 700 10.5px/1 var(--font-text); }
+.ansName { font: 700 14px/1.3 var(--font-text); color: var(--ink); }
+.role { font: 600 10.5px/1 var(--font-text); padding: 4px 8px; border-radius: 999px; background: var(--ok-bg); color: var(--ok-ink); }
+.roleMurid { background: var(--chip); color: var(--ink); }
+.roleAdmin { background: #2D6327; color: #FFFFFF; }
+.ansAvatarTeam { background: #2D6327; color: #FFFFFF; }
+.bio { font: 400 12.5px/1.4 var(--font-text); color: var(--sub); margin-top: 4px; }
+.when { font: 400 12px/1.3 var(--font-text); color: var(--faint); }
+.ansText { font: 400 15px/1.6 var(--font-text); color: var(--ink); margin-top: 8px; max-width: 72ch; text-wrap: pretty; white-space: pre-line; }
+.reply { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+.replyInput { flex: 1; min-width: 0; border: 1px solid var(--hair); border-radius: 999px; padding: 10px 14px; font: 400 14px/1.3 var(--font-text); color: var(--ink); background: var(--bg); outline: none; }
+.replyInput:focus { border-color: var(--accent); }
+.replyBtn { flex: none; padding: 11px 16px; font-size: 13px; }
+.empty { text-align: center; padding: 40px 20px; font: 400 15px/1.5 var(--font-text); color: var(--sub); }
+
+@media (max-width: 860px) {
+  .layout { flex-direction: column; }
+  .spaces { position: static; flex: none; width: 100%; flex-direction: row; overflow-x: auto; gap: 6px; }
+  .spacesTitle { display: none; }
+  .space { flex: none; border: 1px solid var(--hair); }
+  .spaceCount { display: none; }
+  .head { padding: 16px; }
+  .body { padding: 0 16px 16px; }
+}

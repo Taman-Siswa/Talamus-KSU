@@ -1,5 +1,6 @@
 'use client';
 
+import { sc } from '@/lib/murid';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
 import { isBundledSchool, useSchools, useSchoolsStore, useUnpublishedDrafts } from '@/lib/schools';
@@ -25,7 +26,7 @@ export default function AdminSchoolsPage() {
       </div>
       <div className={css.list}>
         {rows.map(({ s, live }) => (
-          <Link key={s.id} href={'/admin/sekolah/' + s.id} className={css.listRow} data-school={s.id}>
+          <Link key={s.id} href={'/admin/sekolah/' + s.id} className={css.listRow} {...sc(s)}>
             <span className={ui.mono}>{s.mono}</span>
             <div className={css.listGrow}>
               <div className={css.listName}>

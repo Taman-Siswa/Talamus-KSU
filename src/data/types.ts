@@ -64,7 +64,58 @@ export interface Requirement {
   det?: Record<string, string>;
 }
 
-export interface School {
+/** The five identity colors of the student design; an admin may pick one, otherwise it follows the school id. */
+export type SchoolColor = 'merah' | 'kuning' | 'biru' | 'hijau' | 'ungu';
+export const SCHOOL_COLORS: SchoolColor[] = ['hijau', 'biru', 'kuning', 'merah', 'ungu'];
+
+/** Icons the admin can pick for highlights and facilities (see ICONS in components/Icon.tsx). */
+export type IconKey = 'spark' | 'shield' | 'home' | 'cap' | 'book' | 'lab' | 'pc' | 'trophy' | 'heart' | 'globe' | 'wave' | 'users';
+
+export interface Review {
+  name: string;
+  /** e.g. "Alumni 2022 · kini di UI" */
+  role: string;
+  title: string;
+  /** paragraphs separated by a blank line */
+  text: string;
+  rating: number;
+  /** months ago; 0 = this week */
+  ago: number;
+  likes: number;
+}
+
+/**
+ * Content for the student's school page (tabs Tentang / Fasilitas / Alumni & prestasi / Ulasan, the Katalog card
+ * and the registration panel). Every field is optional: the page falls back to what the school already has and
+ * shows an empty note for what is missing.
+ */
+export interface SchoolContent {
+  color?: SchoolColor;
+  /** one line under the name on the Katalog card; falls back to `tag` */
+  sub?: string;
+  /** line under the title on the detail page; falls back to city + province */
+  location?: string;
+  /** how many students liked the school so far; the Katalog card shows it plus the viewer's own like */
+  likes?: number;
+  /** reserved for school photos; until assets exist every photo slot shows a placeholder tile */
+  photos?: string[];
+  highlights?: { icon: IconKey; t: string; d: string }[];
+  about?: string;
+  profile?: { k: string; v: string }[];
+  curriculumCards?: { t: string; d: string }[];
+  facilities?: { icon: IconKey; t: string }[];
+  alumni?: { k: string; v: number; campuses?: { n: string; c: number }[] }[];
+  alumniYear?: string;
+  achievements?: { t: string; yr: string }[];
+  achievementsUpdated?: string;
+  reviews?: Review[];
+  /** `free` drives the "Gratis" tag and the Biaya filter; `long` is the text in the Biaya panel */
+  cost?: { long?: string; free?: boolean };
+  /** the "Cek syarat" questions beyond report-card grades */
+  eligibility?: { dob?: { max: number; at: string; q: string }; items: { id: string; q: string }[] };
+}
+
+export interface School extends SchoolContent {
   id: SchoolId;
   mono: string;
   short: string;

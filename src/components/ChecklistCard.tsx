@@ -1,11 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import type { School } from '@/data/types';
 import { P, dlLabel, startOfToday } from '@/lib/dates';
+import { daftarLabel, progressOf, statusLabel } from '@/lib/murid';
+import { isWebUrl } from '@/lib/school-form';
 import { useStore } from '@/lib/store';
 import Icon from './Icon';
-import { isWebUrl } from '@/lib/school-form';
-import css from './ui.module.css';
+import css from './murid/checklist.module.css';
 
 // Students only tick items and fill in data here; documents themselves go to the school's own portal, never to KSU.
 export default function ChecklistCard({ school: S, preview = false }: { school: School; preview?: boolean }) {
@@ -13,29 +15,34 @@ export default function ChecklistCard({ school: S, preview = false }: { school: 
   const forms = useStore(s => s.forms);
   const { toggleCheck, setForm } = useStore.getState();
   const today = startOfToday();
-
-  const total = S.checklist.length;
-  const done = preview ? 0 : S.checklist.filter(c => checks[S.id + '.' + c.id]).length;
+  const { total, done, pct } = preview ? { total: S.checklist.length, done: 0, pct: 0 } : progressOf(S, checks);
+  const resmi = S.status === 'resmi';
 
   return (
-    <div className={css.card} data-school={S.id}>
-      <div className={css.cardHead}>
-        <div className={css.cardTitle}>Checklist berkas</div>
-        <span className={css.progPill}>{done} dari {total} selesai</span>
+    <div className={css.card}>
+      <div className={css.cardTop}>
+        <div className={css.cardMain}>
+          <div className={css.cardTitle}>{S.name}</div>
+          <div className={css.cardSub}>{[S.pill, daftarLabel(S)].filter(Boolean).join(' · ')}</div>
+        </div>
+        <span className={[css.status, resmi ? css.stOk : css.stAmb].join(' ')}>{statusLabel(S)}</span>
+        {!preview && <Link href={'/katalog/' + S.id} className={css.profil}>Lihat profil</Link>}
       </div>
-      <div className={css.track}>
-        <div className={css.trackFill} style={{ width: (total ? Math.round((done / total) * 100) : 0) + '%' }} />
+      <div className={css.prog}>
+        <div className={css.progBar}><div className={css.progFill} style={{ width: pct + '%' }} /></div>
+        <span className={css.progLabel}>{done} dari {total} selesai</span>
       </div>
-      <div className={css.col}>
+      {S.checklist.length === 0 && <div className={css.none}>Belum ada tugas di checklist sekolah ini.</div>}
+      <div>
         {S.checklist.map(c => {
           const key = S.id + '.' + c.id;
           const isDone = !preview && !!checks[key];
           const overdue = !!c.dl && P(c.dl) < today && !isDone;
           return (
             <div key={c.id} className={css.row}>
-              <button className={[css.box, isDone ? css.boxOn : ''].join(' ')} disabled={preview} onClick={() => toggleCheck(key)}
+              <button type="button" className={[css.box, isDone ? css.boxOn : ''].join(' ')} disabled={preview} onClick={() => toggleCheck(key)}
                 role="checkbox" aria-checked={isDone} aria-label={c.l}>
-                {isDone && <Icon name="check" size={13} stroke={3} color="var(--check-ink)" />}
+                {isDone && <Icon name="check" size={13} stroke={3} color="#FFFFFF" />}
               </button>
               <div className={css.rowBody}>
                 <div className={[css.rowLabel, isDone ? css.rowDone : ''].join(' ')}>{c.l}</div>
@@ -54,7 +61,7 @@ export default function ChecklistCard({ school: S, preview = false }: { school: 
                   </div>
                 )}
               </div>
-              <span className={[css.pill, overdue ? css.warn : ''].join(' ')}>{c.dl ? dlLabel(c.dl, c.est) : 'Tenggat belum ditentukan'}</span>
+              <span className={[css.dl, overdue ? css.dlWarn : ''].join(' ')}>{c.dl ? dlLabel(c.dl, c.est) : 'Tenggat belum ditentukan'}</span>
             </div>
           );
         })}

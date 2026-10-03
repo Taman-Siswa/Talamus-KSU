@@ -22,6 +22,12 @@ export interface Profile {
   school?: string;
   year?: string;
   parent?: string;
+  /** "Data diri" on the student Profil (Murid v3) */
+  nisn?: string;
+  birth?: string;
+  domicile?: string;
+  phone?: string;
+  studentEmail?: string;
 }
 
 export interface User {
@@ -33,7 +39,7 @@ export interface User {
 }
 
 /** Where each role lands after signing in. */
-export const homeFor = (role: Role) => (role === 'admin' ? '/admin/sekolah' : '/checklist');
+export const homeFor = (role: Role) => (role === 'admin' ? '/admin/sekolah' : '/katalog');
 
 // DEMO ONLY — admins cannot self-register, so one is seeded to make the admin side reachable.
 // Remove this (and seed admins by invitation) before anything real.

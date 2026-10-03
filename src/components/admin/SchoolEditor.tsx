@@ -1,16 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChecklistItem, ReqCategory, Requirement, School, SchoolInfo } from '@/data/types';
+import { sc } from '@/lib/murid';
 import { bundledDefault, inferPhaseType, isBundledSchool, newSchoolId, reqCategory, useSchoolsStore } from '@/lib/schools';
 import Icon from '../Icon';
 import { REQUIREMENT_GROUPS, requirementGroup, schoolProblems, automaticSchoolLabels, schoolShortName, schoolMonogram, updateRequirementText } from '@/lib/school-form';
 import SchoolProfile from '../SchoolProfile';
+import SchoolCard from '../SchoolCard';
 import ChecklistCard from '../ChecklistCard';
-import FaqCard from '../FaqCard';
+import ForumThreads from '../murid/ForumThreads';
+import CekSyaratModal from '../murid/CekSyaratModal';
 import ChecklistSettings from './ChecklistSettings';
+import MuridContentSection, { muridContentStatus } from './MuridContentSection';
+import CekSyaratEditor from './CekSyaratEditor';
 import css from './admin.module.css';
 import {
   ChipLegend, ChipSet, Eyebrow, Field, PickChips, RepeatList, Section, StringList, Switch, TextArea, TextInput,
@@ -27,9 +32,12 @@ const BOARDING = ['Tersedia', 'Asrama Heterogen', 'Asrama Semi-Militer', 'Non-As
 const FUNDING = ['Beasiswa', 'Berbayar'];
 // Kurikulum tags already used in the Notion catalog; any other can be typed in.
 const CURRICULA = ['Kurikulum Merdeka', 'Kurikulum Nasional', 'Kurikulum K-13', 'Cambridge', 'International Baccalaureate', 'Olimpiade'];
-const SUBJECTS = ['B. Indonesia', 'B. Inggris', 'Matematika', 'IPA', 'IPS'];
-// kelas-semester, in school order
-const SEMESTERS = ['7-1', '7-2', '8-1', '8-2', '9-1', '9-2'];
+// Suggestions for "Provinsi": the Katalog's Lokasi filter lists exactly what is typed, so spelling must match.
+const PROVINCES = ['Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Kepulauan Riau', 'Jambi', 'Sumatera Selatan', 'Bangka Belitung', 'Bengkulu', 'Lampung',
+  'DKI Jakarta', 'Banten', 'Jawa Barat', 'Jawa Tengah', 'DI Yogyakarta', 'Jawa Timur', 'Bali', 'Nusa Tenggara Barat', 'Nusa Tenggara Timur',
+  'Kalimantan Barat', 'Kalimantan Tengah', 'Kalimantan Selatan', 'Kalimantan Timur', 'Kalimantan Utara', 'Sulawesi Utara', 'Gorontalo', 'Sulawesi Tengah',
+  'Sulawesi Barat', 'Sulawesi Selatan', 'Sulawesi Tenggara', 'Maluku', 'Maluku Utara', 'Papua', 'Papua Barat', 'Papua Selatan', 'Papua Tengah', 'Papua Pegunungan', 'Papua Barat Daya',
+  'Multi-kampus'];
 const STATUSES: { value: School['status']; label: string }[] = [
   { value: 'resmi', label: 'Resmi — sudah diumumkan' },
   { value: 'est', label: 'Perkiraan — ikut tahun lalu' },
@@ -61,9 +69,9 @@ const DETAIL: Partial<Record<ReqCategory, { title: string; fields: [string, stri
 /** ISO dates compare as text. */
 const endsEarly = (p: { s: string; e: string }) => !!p.s && !!p.e && p.e < p.s;
 
-type Part = 'profil' | 'alur' | 'syarat' | 'checklist' | 'faq';
+type Part = 'profil' | 'alur' | 'syarat' | 'checklist' | 'faq' | 'halaman';
 const PART_LABEL: Record<Part, string> = {
-  profil: 'Profil sekolah', alur: 'Alur pendaftaran', syarat: 'Persyaratan', checklist: 'Persyaratan dokumen', faq: 'FAQ',
+  profil: 'Profil sekolah', alur: 'Alur pendaftaran', syarat: 'Persyaratan', checklist: 'Checklist persiapan', faq: 'FAQ', halaman: 'Halaman siswa',
 };
 
 /**
@@ -78,12 +86,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
   const [draft, setDraft] = useState<School>(() => automaticSchoolLabels(base));
   const [saved, setSaved] = useState(false);
   const [preview, setPreview] = useState(false);
-  const advancedRef = useRef<HTMLDetailsElement>(null);
-  const showAdvanced = () => {
-    if (!advancedRef.current) return;
-    advancedRef.current.open = true;
-    advancedRef.current.scrollIntoView({ block: 'start' });
-  };
+  const [cekOpen, setCekOpen] = useState(false);
   const isNew = !published;
 
   // dirty = typed but not stored anywhere yet; a stored draft is safe but still unpublished
@@ -156,11 +159,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
     setSaved(false);
   };
 
-  const calc = draft.calc;
   const info = draft.info;
-  const documents = draft.checklist.filter(c => !!c.document);
-  const tasks = draft.checklist.filter(c => !c.document);
-  const updateChecklist = (id: string, changes: Partial<ChecklistItem>) => set('checklist', draft.checklist.map(c => c.id === id ? { ...c, ...changes } : c));
 
   const count = (n: number, unit: string) => ({ text: n ? n + ' ' + unit : 'Belum diisi', done: n > 0 });
   const profileGaps = [draft.name, draft.short, draft.mono, info.kind, info.province, info.boarding, draft.tag].filter(v => !v.trim()).length;
@@ -168,8 +167,9 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
     profil: { text: profileGaps ? profileGaps + ' kolom utama kosong' : 'Lengkap', done: !profileGaps },
     alur: count(draft.phases.filter(p => p.l.trim() && p.s && !endsEarly(p)).length, 'tahap terisi'),
     syarat: count(draft.reqs.filter(r => r.k.trim() && r.v.trim()).length, 'syarat terisi'),
-    checklist: count(documents.filter(c => c.l.trim()).length, 'dokumen'),
+    checklist: count(draft.checklist.filter(c => c.l.trim()).length, 'item'),
     faq: count(draft.faq.filter(f => f.q.trim() && f.a.trim()).length, 'jawaban terisi'),
+    halaman: muridContentStatus(draft),
   };
   const filled = Object.values(status).filter(s => s.done).length;
 
@@ -178,7 +178,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
   };
 
   return (
-    <div className={css.editor} data-school={draft.id}>
+    <div className={css.editor} {...sc(draft)}>
       <div className={css.head}>
         <Link href="/admin/sekolah" className={css.back} aria-label="Kembali ke semua sekolah" title="Semua sekolah" onClick={confirmLeave}>
           <Icon name="arrowLeft" size={20} />
@@ -186,7 +186,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
         <div className={css.headText}>
           <h1 className={css.title}>{draft.name || (isNew ? 'Sekolah baru' : 'Tanpa nama')}</h1>
           <p className={css.lead}>
-            {filled} dari 5 bagian terisi ·{' '}
+            {filled} dari 6 bagian terisi ·{' '}
             {dirty ? 'ada perubahan yang belum disimpan'
               : savedDraft ? (published ? 'ada draft perubahan, siswa masih melihat versi lama' : 'draft, belum tampil ke siswa')
               : isNew ? 'belum dibuat'
@@ -225,7 +225,8 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
               <PickChips label="Negeri/Swasta" value={info.kind} options={KINDS} clearable="" onChange={v => setInfo({ kind: v })} />
             </Field>
             <Field label="Provinsi">
-              <TextInput value={info.province} onChange={v => setInfo({ province: v })} placeholder="Jawa Tengah" />
+              <TextInput value={info.province} onChange={v => setInfo({ province: v })} placeholder="Jawa Tengah" list="daftar-provinsi" />
+              <datalist id="daftar-provinsi">{PROVINCES.map(p => <option key={p} value={p} />)}</datalist>
             </Field>
             <Field label="Asrama" note="kosong = belum diketahui" group>
               <PickChips label="Asrama/Tidak" value={info.boarding} options={BOARDING} clearable="" onChange={v => setInfo({ boarding: v })} />
@@ -273,7 +274,7 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
             <Field label="Website"><TextInput type="url" value={info.website || ''} onChange={v => setInfo({ website: v })} placeholder="https://…" /></Field>
           </div>
 
-          <Field label="Tentang sekolah">
+          <Field label="Ringkasan sekolah" note="muncul di slide utama Katalog saat info resmi dirilis">
             <TextArea value={draft.tag} onChange={v => set('tag', v)} placeholder="Ringkasan sekolah seperti pada baris pembuka spreadsheet." />
           </Field>
 
@@ -331,34 +332,60 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
           )} />
         </div>)}
 
+        <CekSyaratEditor draft={draft} patch={patch} />
       </Section>
 
-      <Section id="checklist" title="4. Persyaratan dokumen" icon="navChecklist" status={status.checklist}>
-        <RepeatList items={documents} onChange={v => set('checklist', [...v, ...tasks])}
-          blank={(): ChecklistItem => ({ id: crypto.randomUUID(), l: '', dl: '', document: { required: true, rules: [], template: '' } })}
-          addLabel="Tambah persyaratan dokumen" rowLabel={item => item.l || 'Dokumen baru'} empty="Belum ada dokumen."
+      <Section id="checklist" title="4. Checklist persiapan" icon="navChecklist" status={status.checklist}>
+        <p className={css.intro}>Urutan di sini sama dengan yang siswa lihat di Checklist. Tiap item punya tenggat, catatan, dan kolom isian; tandai item yang berupa dokumen agar format filenya tampil.</p>
+        <RepeatList items={draft.checklist} onChange={v => set('checklist', v)}
+          blank={(): ChecklistItem => ({ id: crypto.randomUUID(), l: '', dl: '' })}
+          addLabel="Tambah item checklist" rowLabel={item => (item.l || 'Item baru') + (item.document ? ' · dokumen' : '')} empty="Belum ada item checklist."
           render={(item, setItem) => (
             <>
-              <Field label="Nama dokumen" required><TextInput value={item.l} onChange={l => setItem({ l })} placeholder="Scan KTP Ayah/Wali" /></Field>
-              <div className={css.documentFields}>
-                <Field label="Kategori dokumen" group>
-                  <PickChips label="Kategori dokumen" value={item.document!.required ? 'wajib' : 'opsional'} options={[{ value: 'wajib', label: 'Wajib' }, { value: 'opsional', label: 'Opsional' }]}
-                    onChange={v => setItem({ document: { ...item.document!, required: v === 'wajib' } })} />
-                </Field>
-                <RepeatList items={item.document!.rules} onChange={rules => setItem({ document: { ...item.document!, rules } })}
-                  blank={() => ({ format: '', maxMB: '' })} addLabel="Tambah format file" rowLabel={r => r.format || 'Format file'}
-                  render={(rule, update) => <div className={css.grid2}>
-                    <Field label="Format file" required><TextInput value={rule.format} onChange={format => update({ format })} placeholder="JPG/PNG atau PDF" /></Field>
-                    <Field label="Ukuran maksimum (MB)" required><TextInput type="number" min="0.01" value={rule.maxMB} onChange={maxMB => update({ maxMB })} placeholder="5" /></Field>
-                  </div>} />
-                <Field label="Tautan template" note="opsional"><TextInput type="url" value={item.document!.template} onChange={template => setItem({ document: { ...item.document!, template } })} placeholder="https://…" /></Field>
+              <Field label="Judul item" required><TextInput value={item.l} onChange={l => setItem({ l })} placeholder="Buat akun casis di portal pendaftaran" medium /></Field>
+              <ChecklistSettings item={item} onChange={setItem} />
+              <Switch checked={!!item.document} label="Item ini dokumen yang harus disiapkan"
+                onChange={on => setItem({ document: on ? { required: true, rules: [], template: '' } : undefined })} />
+              {item.document && (
+                <div className={css.documentFields}>
+                  <Field label="Kategori dokumen" group>
+                    <PickChips label="Kategori dokumen" value={item.document.required ? 'wajib' : 'opsional'} options={[{ value: 'wajib', label: 'Wajib' }, { value: 'opsional', label: 'Opsional' }]}
+                      onChange={v => setItem({ document: { ...item.document!, required: v === 'wajib' } })} />
+                  </Field>
+                  <RepeatList items={item.document.rules} onChange={rules => setItem({ document: { ...item.document!, rules } })}
+                    blank={() => ({ format: '', maxMB: '' })} addLabel="Tambah format file" rowLabel={r => r.format || 'Format file'}
+                    render={(rule, update) => <div className={css.grid2}>
+                      <Field label="Format file" required><TextInput value={rule.format} onChange={format => update({ format })} placeholder="JPG/PNG atau PDF" /></Field>
+                      <Field label="Ukuran maksimum (MB)" required><TextInput type="number" min="0.01" value={rule.maxMB} onChange={maxMB => update({ maxMB })} placeholder="5" /></Field>
+                    </div>} />
+                  <Field label="Tautan template" note="opsional"><TextInput type="url" value={item.document.template} onChange={template => setItem({ document: { ...item.document!, template } })} placeholder="https://…" /></Field>
+                </div>
+              )}
+            </>
+          )} />
+
+        <div className={css.group}>
+          <Eyebrow>Dokumen resmi &amp; arsip</Eyebrow>
+          <p className={css.intro}>Tautan pedoman, brosur, dan arsip tahun lalu; tampil di panel Pendaftaran halaman sekolah.</p>
+        <RepeatList items={draft.docs} onChange={v => set('docs', v)} blank={() => ({ l: '', m: '', h: '', arsip: false })}
+          addLabel="Tambah referensi" rowLabel={item => item.l || 'Dokumen baru'} empty="Belum ada dokumen."
+          render={(item, setItem) => (
+            <>
+              <div className={css.grid2}>
+                <Field label="Judul dokumen"><TextInput value={item.l} onChange={v => setItem({ l: v })} placeholder="Pedoman pendaftaran 2027/28" /></Field>
+                <Field label="Tautan"><TextInput type="url" value={item.h} onChange={v => setItem({ h: v })} placeholder="https://…" /></Field>
+              </div>
+              <div className={[css.grid2, css.gridEnd, css.gap].join(' ')}>
+                <Field label="Keterangan"><TextInput value={item.m} onChange={v => setItem({ m: v })} placeholder="PDF resmi dari panitia, 24 halaman" /></Field>
+                <Switch checked={item.arsip} label="Arsip tahun lalu" tone="amber" onChange={v => setItem({ arsip: v })} />
               </div>
             </>
           )} />
-        {tasks.length > 0 && <p className={css.intro}>{tasks.length} tugas tambahan tersedia di <button type="button" className={css.inlineLink} onClick={showAdvanced}>Pengaturan lanjutan</button>.</p>}
+        </div>
       </Section>
 
       <Section id="faq" title="5. FAQ" icon="navFaq" status={status.faq}>
+        <p className={css.intro}>Pertanyaan ini tampil di Forum siswa, dijawab oleh Tim TamanSchool.</p>
         <RepeatList items={draft.faq} onChange={v => set('faq', v)} blank={() => ({ q: '', a: '' })}
           addLabel="Tambah pertanyaan" rowLabel={item => item.q || 'Pertanyaan baru'} empty="Belum ada pertanyaan."
           render={(item, setItem) => (
@@ -372,7 +399,9 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
           )} />
       </Section>
 
-      <details id="lanjutan" ref={advancedRef} className={[css.section, css.advanced].join(' ')}>
+      <MuridContentSection draft={draft} patch={patch} n={6} />
+
+      <details id="lanjutan" className={[css.section, css.advanced].join(' ')}>
         <summary>Pengaturan lanjutan <span>Opsional · pengaturan aplikasi dan informasi tambahan</span></summary>
         <div className={css.sectionBody}>
           <Eyebrow>Profil tambahan</Eyebrow>
@@ -426,91 +455,6 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
               </div>;
             })}
           </details>
-        <details className={css.subsection}>
-        <summary>Aturan nilai rapor & kalkulator</summary>
-        <p className={css.intro}>Aktifkan setelah aturan rata-rata dan nilai per semester jelas. Pengecualian prestasi atau konversi nilai ditulis dalam penjelasan dan FAQ.</p>
-        <Switch checked={!!calc} label="Sekolah ini punya batas nilai rapor"
-          onChange={on => set('calc', on ? { subjects: ['Matematika'], sems: ['7-1'], minAvg: 85, minSem: null } : null)} />
-        {calc ? (
-          <>
-            <Field label="Mata pelajaran" group>
-              <ChipSet label="Mata pelajaran" value={calc.subjects} onChange={v => set('calc', { ...calc, subjects: v })} options={SUBJECTS} />
-            </Field>
-            <Field label="Semester yang dihitung" note="kelas-semester" group>
-              <ChipSet label="Semester yang dihitung" value={calc.sems} onChange={v => set('calc', { ...calc, sems: v })} options={SEMESTERS} fixed sorted />
-            </Field>
-            <div className={css.grid2}>
-              <Field label="Rata-rata minimal per mapel">
-                <TextInput type="number" min="0" max="100" placeholder="85" value={String(calc.minAvg)} onChange={v => set('calc', { ...calc, minAvg: Number(v) || 0 })} />
-              </Field>
-              <Field label="Nilai minimal tiap semester" note="opsional">
-                <TextInput type="number" min="0" max="100" placeholder="Kosong = tidak ada batas" value={calc.minSem == null ? '' : String(calc.minSem)}
-                  onChange={v => set('calc', { ...calc, minSem: v === '' ? null : Number(v) || 0 })} />
-              </Field>
-            </div>
-            <Field label="Penjelasan untuk siswa">
-              <TextArea value={draft.calcNote} onChange={v => set('calcNote', v)} placeholder="Nilai rapor mana yang dipakai dan berapa batasnya." />
-            </Field>
-            <div className={css.grid2}>
-              <Field label="Pesan bila memenuhi">
-                <TextArea value={draft.passNote || ''} onChange={v => set('passNote', v)} placeholder="Langkah berikutnya untuk siswa." />
-              </Field>
-              <Field label="Pesan bila belum memenuhi">
-                <TextArea value={draft.failNote || ''} onChange={v => set('failNote', v)} placeholder="Saran untuk siswa." />
-              </Field>
-            </div>
-          </>
-        ) : (
-          <div className={css.grid2}>
-            <Field label="Penjelasan untuk siswa">
-              <TextArea value={draft.calcNote} onChange={v => set('calcNote', v)} placeholder="Kenapa sekolah ini tidak memakai nilai rapor." />
-            </Field>
-            <Field label="Pesan pengganti hasil">
-              <TextArea value={draft.noGradeNote || ''} onChange={v => set('noGradeNote', v)} placeholder="Tidak ada gugur berkas, fokus ke tes potensi akademik." />
-            </Field>
-          </div>
-        )}
-        <Field label="Catatan tinggi & berat badan" note="kosongkan bila tidak dinilai">
-          <TextArea value={draft.bodyNote || ''} onChange={v => set('bodyNote', v)}
-            placeholder="Tidak ada angka resmi, postur dinilai saat tes kesehatan. IMT 17–25 patokan aman." />
-        </Field>
-        </details>
-          <details className={css.subsection}>
-            <summary>Tenggat & kolom isian dokumen</summary>
-            {documents.length === 0 && <p className={css.intro}>Tambahkan dokumen di bagian Persyaratan dokumen terlebih dahulu.</p>}
-            {documents.map(item => <div key={item.id} className={[css.row, css.advancedRow].join(' ')}>
-              <Eyebrow>{item.l || 'Dokumen baru'}</Eyebrow>
-              <ChecklistSettings item={item} onChange={p => updateChecklist(item.id, p)} />
-            </div>)}
-          </details>
-          <details className={css.subsection}>
-            <summary>Tugas tambahan ({tasks.length})</summary>
-            <RepeatList items={tasks} onChange={v => set('checklist', [...documents, ...v])}
-              blank={(): ChecklistItem => ({ id: crypto.randomUUID(), l: '', dl: '' })}
-              addLabel="Tambah tugas non-dokumen" rowLabel={item => item.l || 'Tugas baru'} empty="Belum ada tugas tambahan."
-              render={(item, update) => <>
-                <Field label="Judul tugas tambahan" required><TextInput value={item.l} onChange={l => update({ l })} /></Field>
-                <ChecklistSettings item={item} onChange={update} />
-                <button type="button" className={css.btn} onClick={() => update({ document: { required: true, rules: [], template: '' } })}>Jadikan persyaratan dokumen</button>
-              </>} />
-          </details>
-      <div className={css.group}><Eyebrow>Referensi · pedoman, brosur & arsip</Eyebrow>
-        <RepeatList items={draft.docs} onChange={v => set('docs', v)} blank={() => ({ l: '', m: '', h: '', arsip: false })}
-          addLabel="Tambah referensi" rowLabel={item => item.l || 'Dokumen baru'} empty="Belum ada dokumen."
-          render={(item, setItem) => (
-            <>
-              <div className={css.grid2}>
-                <Field label="Judul dokumen"><TextInput value={item.l} onChange={v => setItem({ l: v })} placeholder="Pedoman pendaftaran 2027/28" /></Field>
-                <Field label="Tautan"><TextInput type="url" value={item.h} onChange={v => setItem({ h: v })} placeholder="https://…" /></Field>
-              </div>
-              <div className={[css.grid2, css.gridEnd, css.gap].join(' ')}>
-                <Field label="Keterangan"><TextInput value={item.m} onChange={v => setItem({ m: v })} placeholder="PDF resmi dari panitia, 24 halaman" /></Field>
-                <Switch checked={item.arsip} label="Arsip tahun lalu" tone="amber" onChange={v => setItem({ arsip: v })} />
-              </div>
-            </>
-          )} />
-      </div>
-
         </div>
       </details>
 
@@ -527,14 +471,18 @@ export default function SchoolEditor({ school, published, savedDraft }: { school
         ) : null}
         {saved && !dirty ? <span className={css.saved}><Icon name="check" size={14} stroke={2.4} />Draft tersimpan</span> : null}
 
-ˆø      </div>
-      {preview ? <section className={css.preview} aria-label="Pratinjau untuk siswa">
+     </div>
+      {preview ? <section className={[css.preview, 'skin-murid'].join(' ')} aria-label="Pratinjau untuk siswa">
         <h2>Pratinjau untuk siswa</h2>
-        <p className={css.intro}>Menampilkan isian saat ini. Draft belum dipublikasikan. Checklist pada pratinjau tidak mengubah progres siswa.</p>
+        <p className={css.intro}>Menampilkan isian saat ini: kartu Katalog, halaman sekolah, Checklist, Cek syarat, dan Forum. Draft belum dipublikasikan. Pratinjau tidak mengubah data siswa.</p>
+        <div className={css.previewCard}><SchoolCard school={draft} preview /></div>
         <SchoolProfile school={draft} preview />
         <ChecklistCard school={draft} preview />
-        {calc ? <p className={css.intro}>Kalkulator: {calc.subjects.join(', ')} · semester {calc.sems.join(', ')} · rata-rata minimal {calc.minAvg}{calc.minSem != null ? ` · tiap semester minimal ${calc.minSem}` : ''}. {draft.calcNote}</p> : null}
-        <FaqCard school={draft} />
+        <div>
+          <button type="button" className={css.btn} onClick={() => setCekOpen(true)}>Lihat Cek syarat</button>
+        </div>
+        <ForumThreads schools={[draft]} filter="all" preview />
+        {cekOpen && <CekSyaratModal school={draft} onClose={() => setCekOpen(false)} preview />}
       </section> : null}
     </div>
   );

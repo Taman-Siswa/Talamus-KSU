@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
-import Link from 'next/link';
+import { useState, type ReactNode } from 'react';
+import { Field, PasswordForm, useFlash } from '@/components/PasswordForm';
+import StudentProfile from '@/components/murid/StudentProfile';
 import { AVATAR_COLORS, useAuth, useCurrentUser, type Profile, type User } from '@/lib/auth';
 import { useStore } from '@/lib/store';
 import { accountMeta, initials } from '@/data/student';
-import { useTargetSchools } from '@/components/SchoolChips';
 import Icon, { type IconName } from '@/components/Icon';
 import ui from '@/components/ui.module.css';
 import css from './profil.module.css';
@@ -14,7 +14,7 @@ const COLOR_NAMES: Record<(typeof AVATAR_COLORS)[number], string> = {
   blue: 'Biru', teal: 'Hijau toska', purple: 'Ungu', slate: 'Abu kebiruan', pink: 'Merah muda',
 };
 
-type Draft = { name: string } & Required<Profile>;
+type Draft = { name: string } & Required<Pick<Profile, 'nick' | 'color' | 'grade' | 'school' | 'year' | 'parent'>>;
 const draftOf = (u: User): Draft => ({
   name: u.name,
   nick: u.profile?.nick || '',
@@ -37,73 +37,11 @@ function Card({ title, icon, children }: { title: string; icon: IconName; childr
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <label className={css.field}>
-      <span className={css.label}>{label}</span>
-      {children}
-      {hint ? <span className={css.hint}>{hint}</span> : null}
-    </label>
-  );
-}
-
-/** A short-lived line after an action ("Profil disimpan") or its error. */
-function useFlash() {
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  useEffect(() => {
-    if (!msg?.ok) return;
-    const t = setTimeout(() => setMsg(null), 2500);
-    return () => clearTimeout(t);
-  }, [msg]);
-  const node = msg ? (
-    <span className={[css.msg, msg.ok ? css.msgOk : css.msgBad].join(' ')} role="status">
-      {msg.ok ? <Icon name="check" size={15} stroke={2.2} /> : null}{msg.text}
-    </span>
-  ) : null;
-  return { node, show: (ok: boolean, text: string) => setMsg({ ok, text }) };
-}
-
-function PasswordForm({ onDone }: { onDone: (changed: boolean) => void }) {
-  const changePassword = useAuth(s => s.changePassword);
-  const [cur, setCur] = useState('');
-  const [next, setNext] = useState('');
-  const [again, setAgain] = useState('');
-  const [busy, setBusy] = useState(false);
-  const flash = useFlash();
-  const submit = async () => {
-    if (next !== again) { flash.show(false, 'Password baru dan ulangannya belum sama.'); return; }
-    setBusy(true);
-    const err = await changePassword(cur, next);
-    setBusy(false);
-    if (err) { flash.show(false, err); return; }
-    onDone(true);
-  };
-  return (
-    <form className={css.pwForm} onSubmit={e => { e.preventDefault(); submit(); }}>
-      <Field label="Password lama">
-        <input className={css.input} type="password" autoComplete="current-password" value={cur} onChange={e => setCur(e.target.value)} />
-      </Field>
-      <Field label="Password baru" hint="Minimal 6 karakter">
-        <input className={css.input} type="password" autoComplete="new-password" value={next} onChange={e => setNext(e.target.value)} />
-      </Field>
-      <Field label="Ulangi password baru">
-        <input className={css.input} type="password" autoComplete="new-password" value={again} onChange={e => setAgain(e.target.value)} />
-      </Field>
-      <div className={css.actions}>
-        <button type="submit" className={[css.btn, css.btnPrimary].join(' ')} disabled={busy || !cur || !next}>Simpan password</button>
-        <button type="button" className={[css.btn, css.btnGhost].join(' ')} onClick={() => onDone(false)}>Batal</button>
-      </div>
-      {flash.node}
-    </form>
-  );
-}
-
 function ProfilForm({ user }: { user: User }) {
   const updateProfile = useAuth(s => s.updateProfile);
   const logout = useAuth(s => s.logout);
   const dark = useStore(s => s.dark);
   const setDark = useStore(s => s.setDark);
-  const targets = useTargetSchools();
   const isStudent = user.role !== 'admin';
 
   const [draft, setDraft] = useState<Draft>(() => draftOf(user));
@@ -164,35 +102,6 @@ function ProfilForm({ user }: { user: User }) {
             </div>
           </Card>
 
-          {isStudent ? (
-            <Card title="Sekolah dan target" icon="navKatalog">
-              <div className={css.fields}>
-                <div className={css.grid2}>
-                  <Field label="Jenjang" hint="Contoh: Kelas 9">{text('grade', 'Kelas 9')}</Field>
-                  <Field label="Sekolah asal">{text('school', 'SMP Negeri 1 Jakarta')}</Field>
-                </div>
-                <Field label="Tahun masuk SMA" hint="Tampil di bawah namamu di sidebar">{text('year', '2027')}</Field>
-                <div className={css.field}>
-                  <span className={css.label}>SMA target</span>
-                  {targets.length ? (
-                    <div className={css.targets}>
-                      {targets.map(s => (
-                        <Link key={s.id} href={'/katalog/' + s.id} data-school={s.id} className={css.target}>
-                          <span className={css.targetDot} />{s.short}
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className={css.targetsEmpty}>Belum ada sekolah target.</span>
-                  )}
-                  <span className={css.hint}>
-                    Diambil dari sekolah yang kamu jadikan target. <Link href="/katalog" className={css.linkInline}>Ubah di Katalog</Link>
-                  </span>
-                </div>
-                <Field label="Nama orang tua" hint="Opsional">{text('parent')}</Field>
-              </div>
-            </Card>
-          ) : null}
 
           <div className={css.actions}>
             <button type="button" className={[css.btn, css.btnPrimary].join(' ')} onClick={save}>
@@ -242,5 +151,6 @@ function ProfilForm({ user }: { user: User }) {
 export default function ProfilPage() {
   const user = useCurrentUser();
   // Shell only renders pages for a signed-in account; the key resets the form when the account changes.
-  return user ? <ProfilForm key={user.email} user={user} /> : null;
+  if (!user) return null;
+  return user.role === 'admin' ? <ProfilForm key={user.email} user={user} /> : <StudentProfile key={user.email} user={user} />;
 }

@@ -33,7 +33,7 @@ export function Field({ label, note, required, group, className, children }: {
 }
 
 /** Underlined text input. `strong` is the heavier style used for a school's name. */
-export function TextInput({ value, onChange, placeholder, type = 'text', maxLength, min, max, invalid, strong, medium, code, label }: {
+export function TextInput({ value, onChange, placeholder, type = 'text', maxLength, min, max, invalid, strong, medium, code, label, list }: {
   value: string; onChange: (v: string) => void; placeholder?: string; type?: 'text' | 'date' | 'url' | 'number';
   maxLength?: number; min?: string; max?: string; invalid?: boolean; strong?: boolean;
   /** weight 500, for a row's main line (task title, question) */
@@ -41,11 +41,13 @@ export function TextInput({ value, onChange, placeholder, type = 'text', maxLeng
   code?: boolean;
   /** accessible name when there is no visible label */
   label?: string;
+  /** id of a <datalist> with suggestions */
+  list?: string;
 }) {
   return (
     <input className={cx(css.input, strong && css.inputStrong, medium && css.inputMedium, code && css.inputCode, invalid && css.inputBad)}
       type={type} value={value} placeholder={placeholder} maxLength={maxLength} min={min} max={max}
-      aria-label={label} aria-invalid={invalid || undefined} onChange={e => onChange(e.target.value)} />
+      aria-label={label} list={list} aria-invalid={invalid || undefined} onChange={e => onChange(e.target.value)} />
   );
 }
 
@@ -153,7 +155,7 @@ export function AddButton({ onClick, children }: { onClick: () => void; children
   );
 }
 
-function RowTools({ i, count, onMove, onRemove }: { i: number; count: number; onMove: (to: number) => void; onRemove: () => void }) {
+export function RowTools({ i, count, onMove, onRemove }: { i: number; count: number; onMove: (to: number) => void; onRemove: () => void }) {
   return (
     <>
       <button type="button" className={css.rowBtn} onClick={() => onMove(i - 1)} disabled={i === 0} aria-label="Naikkan" title="Naikkan">
@@ -169,7 +171,7 @@ function RowTools({ i, count, onMove, onRemove }: { i: number; count: number; on
   );
 }
 
-const moveIn = <T,>(items: T[], i: number, to: number) => {
+export const moveIn = <T,>(items: T[], i: number, to: number) => {
   if (to < 0 || to >= items.length) return items;
   const next = items.slice();
   [next[i], next[to]] = [next[to], next[i]];
@@ -259,5 +261,38 @@ export function Section({ id, title, icon, status, collapsible, open = true, onT
       ) : <div className={css.sectionHead}>{head}</div>}
       {open ? <div className={css.sectionBody}>{children}</div> : null}
     </section>
+  );
+}
+
+/**
+ * A compact list: one line per item (inputs side by side, tools at the end), for short rows such as a facility or a
+ * highlight. `cols` is the grid template of the inputs, e.g. "2fr 3fr".
+ */
+export function LineList<T>({ items, onChange, blank, render, addLabel, empty, cols, head }: {
+  items: T[];
+  onChange: (items: T[]) => void;
+  blank: () => T;
+  render: (item: T, set: (patch: Partial<T>) => void, i: number) => ReactNode;
+  addLabel: string;
+  empty?: string;
+  cols: string;
+  /** column titles above the first line */
+  head?: string[];
+}) {
+  const style = { '--cols': cols } as React.CSSProperties;
+  return (
+    <div className={css.lines}>
+      {head && items.length > 0 ? <div className={css.lineHead} style={style}>{head.map(h => <span key={h}>{h}</span>)}<span /></div> : null}
+      {items.map((item, i) => (
+        <div key={i} className={css.lineItem} style={style}>
+          {render(item, patch => onChange(items.map((x, j) => (j === i ? { ...x, ...patch } : x))), i)}
+          <span className={css.lineTools}>
+            <RowTools i={i} count={items.length} onMove={to => onChange(moveIn(items, i, to))} onRemove={() => onChange(items.filter((_, j) => j !== i))} />
+          </span>
+        </div>
+      ))}
+      {items.length === 0 && empty ? <p className={css.empty}>{empty}</p> : null}
+      <AddButton onClick={() => onChange([...items, blank()])}>{addLabel}</AddButton>
+    </div>
   );
 }

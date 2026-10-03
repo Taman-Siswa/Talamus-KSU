@@ -1,9 +1,29 @@
 import { create } from 'zustand';
 import { persist, type PersistStorage } from 'zustand/middleware';
-import { getSchools } from '@/lib/schools';
 import type { SchoolId } from '@/data/types';
 
 export const PERSIST_KEY = 'tsprep-v1';
+
+/** The student's TAMAN Fit Check and "Ceritaku" for one school. */
+export interface FitState {
+  /** scores 1–5 for T, A, M, A, N; 0 = not answered */
+  me?: number[];
+  /** the written answer under each letter */
+  qual?: string[];
+  /** the seven blanks of the "Ceritaku" paragraph, s1…s7 */
+  story?: Record<string, string>;
+  savedAt?: number;
+}
+
+export interface ForumPost { id: string; sid: string; q: string; by: string; at: number }
+export interface ForumReply { n: string; t: string; at: number; role?: 'tutor' | 'admin' | 'murid' }
+/** Forum content the student wrote or voted on, kept in this browser until there is a server. */
+export interface ForumState {
+  posts: ForumPost[];
+  replies: Record<string, ForumReply[]>;
+  /** thread ids and "ans:<thread>:<n>" keys the student upvoted */
+  votes: Record<string, boolean>;
+}
 
 export interface Persisted {
   dark: boolean;
@@ -13,10 +33,20 @@ export interface Persisted {
   sel: Partial<Record<SchoolId, boolean>>;
   checks: Record<string, boolean>;
   forms: Record<string, string>;
-  grades: Partial<Record<SchoolId, string[][]>>;
-  iq: Partial<Record<SchoolId, string>>;
-  body: Partial<Record<SchoolId, { tb?: string; bb?: string }>>;
-  prestasi: Partial<Record<SchoolId, boolean>>;
+  /** "Cek syarat": report-card average per subject, keyed `<school>.<subject>` */
+  quick: Record<string, string>;
+  /** "Cek syarat": answers to the school's other requirements, per school */
+  elig: Record<string, Record<string, 'ya' | 'tidak'>>;
+  /** schools whose Cek syarat the student has submitted */
+  eligDone: Record<string, boolean>;
+  /** date of birth for age-limited schools (yyyy-mm-dd) */
+  dob: string;
+  fit: Record<string, FitState>;
+  /** schools hidden from the combined Timeline (a view filter only) */
+  tlHide: Record<string, boolean>;
+  forum: ForumState;
+  /** liked reviews, keyed `<school>.<index>` */
+  rvLike: Record<string, boolean>;
 }
 
 interface Actions {
@@ -28,29 +58,35 @@ interface Actions {
   toggleSel: (id: SchoolId) => void;
   toggleCheck: (key: string) => void;
   setForm: (key: string, value: string) => void;
-  setGrade: (id: SchoolId, si: number, ci: number, value: string) => void;
-  setIq: (id: SchoolId, value: string) => void;
-  setBody: (id: SchoolId, k: 'tb' | 'bb', value: string) => void;
-  togglePrestasi: (id: SchoolId) => void;
+  setQuick: (key: string, value: string) => void;
+  setElig: (id: SchoolId, item: string, answer: 'ya' | 'tidak') => void;
+  submitElig: (id: SchoolId) => void;
+  resetElig: (id: SchoolId, subjects: string[]) => void;
+  setDob: (value: string) => void;
+  setFit: (id: SchoolId, patch: Partial<FitState>) => void;
+  toggleTlHide: (id: SchoolId) => void;
+  addPost: (post: ForumPost) => void;
+  addReply: (threadId: string, reply: ForumReply) => void;
+  toggleVote: (key: string) => void;
+  toggleRvLike: (key: string) => void;
 }
-
-const emptyGrades = (id: SchoolId) => {
-  const c = getSchools().find(s => s.id === id)?.calc;
-  return c ? c.subjects.map(() => c.sems.map(() => '')) : [];
-};
 
 const defaults: Persisted = {
   dark: false,
-  page: 'checklist',
+  page: 'katalog',
   fSchool: '',
   sbMin: false,
   sel: {},
   checks: {},
   forms: {},
-  grades: {},
-  iq: {},
-  body: {},
-  prestasi: {},
+  quick: {},
+  elig: {},
+  eligDone: {},
+  dob: '',
+  fit: {},
+  tlHide: {},
+  forum: { posts: [], replies: {}, votes: {} },
+  rvLike: {},
 };
 
 const PERSISTED_KEYS = Object.keys(defaults) as (keyof Persisted)[];
@@ -74,12 +110,17 @@ const flatStorage: PersistStorage<Persisted> = {
       });
       // Retire the removed demo school's saved selection and progress on account load.
       if (state.fSchool === 'wardaya') state.fSchool = '';
-      for (const key of ['sel', 'grades', 'iq', 'body', 'prestasi', 'checks', 'forms']) {
-        const values = state[key] as Record<string, unknown>;
-        state[key] = Object.fromEntries(Object.entries(values).filter(([id]) => id !== 'wardaya' && !id.startsWith('wardaya.')));
+      for (const key of ['sel', 'checks', 'forms', 'quick', 'elig', 'eligDone', 'fit', 'tlHide']) {
+        const values = state[key];
+        state[key] = values && typeof values === 'object'
+          ? Object.fromEntries(Object.entries(values).filter(([id]) => id !== 'wardaya' && !id.startsWith('wardaya.')))
+          : {};
       }
+      // Saved before the Forum existed, or by an older build: make sure every part is there.
+      const forum = (state.forum ?? {}) as Partial<ForumState>;
+      state.forum = { posts: forum.posts ?? [], replies: forum.replies ?? {}, votes: forum.votes ?? {} };
       if (raw.v !== 2) state.dark = defaults.dark;
-      if (!state.page || state.page === 'overview' || state.page === 'dash') state.page = 'checklist';
+      if (!state.page || state.page === 'overview' || state.page === 'dash') state.page = 'katalog';
       return { state: state as unknown as Persisted, version: 2 };
     } catch {
       return fresh;
@@ -108,14 +149,27 @@ export const useStore = create<Persisted & Actions>()(
       toggleSel: id => set({ sel: { ...get().sel, [id]: !get().sel[id] } }),
       toggleCheck: key => set({ checks: { ...get().checks, [key]: !get().checks[key] } }),
       setForm: (key, value) => set({ forms: { ...get().forms, [key]: value } }),
-      setGrade: (id, si, ci, value) => {
-        const arr = (get().grades[id] || emptyGrades(id)).map(r => r.slice());
-        arr[si][ci] = value;
-        set({ grades: { ...get().grades, [id]: arr } });
+      setQuick: (key, value) => set({ quick: { ...get().quick, [key]: value } }),
+      setElig: (id, item, answer) => set({ elig: { ...get().elig, [id]: { ...get().elig[id], [item]: answer } } }),
+      submitElig: id => set({ eligDone: { ...get().eligDone, [id]: true } }),
+      resetElig: (id, subjects) => {
+        const quick = { ...get().quick };
+        subjects.forEach(sb => delete quick[id + '.' + sb]);
+        set({ quick, elig: { ...get().elig, [id]: {} }, eligDone: { ...get().eligDone, [id]: false } });
       },
-      setIq: (id, value) => set({ iq: { ...get().iq, [id]: value } }),
-      setBody: (id, k, value) => set({ body: { ...get().body, [id]: { ...get().body[id], [k]: value } } }),
-      togglePrestasi: id => set({ prestasi: { ...get().prestasi, [id]: !get().prestasi[id] } }),
+      setDob: dob => set({ dob }),
+      setFit: (id, patch) => set({ fit: { ...get().fit, [id]: { ...get().fit[id], ...patch } } }),
+      toggleTlHide: id => set({ tlHide: { ...get().tlHide, [id]: !get().tlHide[id] } }),
+      addPost: post => set({ forum: { ...get().forum, posts: [post, ...get().forum.posts] } }),
+      addReply: (threadId, reply) => {
+        const f = get().forum;
+        set({ forum: { ...f, replies: { ...f.replies, [threadId]: [...(f.replies[threadId] || []), reply] } } });
+      },
+      toggleVote: key => {
+        const f = get().forum;
+        set({ forum: { ...f, votes: { ...f.votes, [key]: !f.votes[key] } } });
+      },
+      toggleRvLike: key => set({ rvLike: { ...get().rvLike, [key]: !get().rvLike[key] } }),
     }),
     {
       name: PERSIST_KEY,

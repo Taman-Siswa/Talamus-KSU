@@ -1,45 +1,49 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { School } from '@/data/types';
-import { P, fmt, startOfToday } from '@/lib/dates';
-import { keyDatesOf } from '@/lib/schools';
+import { cardSub, curriculumLabel, daftarLabel, isBoarding, isFree, placeChip, sc, statusLabel } from '@/lib/murid';
 import { useStore } from '@/lib/store';
-import TargetButton from './TargetButton';
 import Icon from './Icon';
-import css from './ui.module.css';
+import PhotoTile from './murid/PhotoTile';
+import css from './murid/katalog.module.css';
 
-export default function SchoolCard({ school: s }: { school: School }) {
+/** A school on the Katalog: status, one-line summary, chips, photo slot, and the save heart. */
+export default function SchoolCard({ school: s, preview = false }: { school: School; preview?: boolean }) {
   const router = useRouter();
-  const checks = useStore(st => st.checks);
-  const today = startOfToday();
-
+  const on = useStore(st => !preview && !!st.sel[s.id]);
+  const toggleSel = useStore(st => st.toggleSel);
   const href = '/katalog/' + s.id;
-  const total = s.checklist.length;
-  const done = s.checklist.filter(c => checks[s.id + '.' + c.id]).length;
-  const next = keyDatesOf(s).map(k => ({ k, d: P(k.d) })).find(x => x.d >= today);
   const resmi = s.status === 'resmi';
-
+  const place = placeChip(s);
+  const kur = curriculumLabel(s);
   return (
-    <div className={css.schoolCard} data-school={s.id} onClick={() => router.push(href)}>
-      <div className={css.schoolHead}>
-        <span className={css.mono}>{s.mono}</span>
-        <Link href={href} className={css.schoolName} onClick={e => e.stopPropagation()}>{s.short}</Link>
-        <span className={[css.statusPill, resmi ? css.ok : css.amb].join(' ')}>{resmi ? 'Info resmi' : 'Perkiraan'}</span>
+    <div className={css.card} {...sc(s)} onClick={() => { if (!preview) router.push(href); }}>
+      <span className={[css.badge, resmi ? css.badgeOk : css.badgeAmb].join(' ')}>{statusLabel(s)}</span>
+      <Link href={href} className={css.name} onClick={e => { e.stopPropagation(); if (preview) e.preventDefault(); }}>{s.name}</Link>
+      <div className={css.desc}>{cardSub(s)}</div>
+      <div className={css.meta}>Pendaftaran: {daftarLabel(s)}</div>
+      <div className={css.feats}>
+        {place && <span className={css.feat}><Icon name="pin" size={14} stroke={1.9} />{place}</span>}
+        {isFree(s) && <span className={[css.feat, css.featGratis].join(' ')}><Icon name="spark" size={14} stroke={1.9} />Gratis</span>}
+        {s.info.boarding && (isBoarding(s)
+          ? <span className={[css.feat, css.featAsrama].join(' ')}><Icon name="home" size={14} stroke={1.9} />Asrama</span>
+          : <span className={[css.feat, css.featMuted].join(' ')}><Icon name="home" size={14} stroke={1.9} />Non-asrama</span>)}
+        {kur && <span className={[css.feat, css.featKur].join(' ')}><Icon name="cap" size={14} stroke={1.9} />{kur}</span>}
       </div>
-      <div className={css.next}>
-        {next ? 'Berikutnya: ' + next.k.l + ' · ' + fmt(next.d, true) : 'Seluruh tahapan terjadwal sudah lewat.'}
-      </div>
-      <div className={[css.track, css.trackSm].join(' ')}>
-        <div className={css.trackFill} style={{ width: (total ? Math.round((done / total) * 100) : 0) + '%' }} />
-      </div>
-      <div className={css.progLabel}>Checklist {done} dari {total} selesai</div>
-      <div className={css.cardActions}>
-        <TargetButton school={s} />
-        <Link href={href} className={css.detailBtn} onClick={e => e.stopPropagation()} aria-label={'Lihat detail ' + s.short} title="Lihat detail">
-          <Icon name="arrowRight" size={18} stroke={1.8} />
-        </Link>
+      <div className={css.grow} />
+      <PhotoTile school={s} className={css.photo} />
+      <div className={css.foot}>
+        <Link href={href} className={css.more} onClick={e => { e.stopPropagation(); if (preview) e.preventDefault(); }}>Pelajari lebih lanjut<Icon name="chevronRight" size={14} stroke={2.2} /></Link>
+        <span className={css.likeWrap}>
+        {s.likes != null && <span className={css.likes}>{s.likes + (on ? 1 : 0)} suka</span>}
+        <button type="button" className={[css.heart, on ? css.heartOn : ''].join(' ')} aria-pressed={on} disabled={preview}
+          title={on ? 'Batal simpan' : 'Simpan sekolah'} aria-label={(on ? 'Batal simpan ' : 'Simpan ') + s.short}
+          onClick={e => { e.stopPropagation(); toggleSel(s.id); }}>
+          <Icon name="heart" size={19} stroke={1.8} fill={on} />
+        </button>
+        </span>
       </div>
     </div>
   );

@@ -22,9 +22,3 @@ export const fmtR = (a: string, b: string) => {
   if (A.getMonth() === B.getMonth() && A.getFullYear() === B.getFullYear()) return A.getDate() + '–' + fmt(B, true);
   return fmt(A, A.getFullYear() !== B.getFullYear()) + ' – ' + fmt(B, true);
 };
-
-// Gantt range: Sep 2026 – Apr 2027
-export const R0 = P('2026-09-01');
-export const R1 = P('2027-05-01');
-export const SPAN = R1.valueOf() - R0.valueOf();
-export const pct = (d: string) => Math.min(100, Math.max(0, ((P(d).valueOf() - R0.valueOf()) / SPAN) * 100));

@@ -74,8 +74,24 @@ export function schoolProblems(s: School): string[] {
     need(d.l, `Judul referensi ${i + 1}`);
     if (!isWebUrl(d.h)) errors.push(`Referensi ${i + 1}: tautan harus http/https`);
   });
+  // What the student pages show: every row that was added needs its main text, so no empty card or line appears.
+  s.photos?.forEach((u, i) => { if (u.trim() && !isWebUrl(u.trim())) errors.push(`Foto ${i + 1}: tautan harus http/https`); });
+  s.highlights?.forEach((h, i) => need(h.t, `Judul sorotan ${i + 1}`));
+  s.profile?.forEach((r, i) => { need(r.k, `Label fakta ${i + 1}`); need(r.v, `Isi fakta ${i + 1}`); });
+  s.curriculumCards?.forEach((c, i) => need(c.t, `Judul kartu kurikulum ${i + 1}`));
+  s.facilities?.forEach((f, i) => need(f.t, `Nama fasilitas ${i + 1}`));
+  s.alumni?.forEach((a, i) => {
+    need(a.k, `Tujuan lulusan ${i + 1}`);
+    if (!(a.v >= 0 && a.v <= 100)) errors.push(`Tujuan lulusan ${i + 1}: persen harus 0–100`);
+    a.campuses?.forEach((c, j) => need(c.n, `Kampus ${j + 1} pada tujuan lulusan ${i + 1}`));
+  });
+  s.achievements?.forEach((a, i) => need(a.t, `Prestasi ${i + 1}`));
+  s.reviews?.forEach((r, i) => { need(r.name, `Nama pemberi ulasan ${i + 1}`); need(r.text, `Isi ulasan ${i + 1}`); });
+  const dob = s.eligibility?.dob;
+  if (dob && (!(dob.max > 0) || !validDate(dob.at))) errors.push('Cek syarat usia: isi usia maksimal dan tanggal acuan');
+  s.eligibility?.items.forEach((it, i) => need(it.q, `Pertanyaan Cek syarat ${i + 1}`));
   if (s.calc) {
-    if (!s.calc.subjects.length || !s.calc.sems.length) errors.push('Kalkulator memerlukan minimal satu mapel dan satu semester');
+    if (!s.calc.subjects.length) errors.push('Syarat nilai rapor memerlukan minimal satu mata pelajaran');
     if ([s.calc.minAvg, s.calc.minSem].some(n => n !== null && (!Number.isFinite(n) || n < 0 || n > 100)))
       errors.push('Batas nilai kalkulator harus antara 0 dan 100');
   }
