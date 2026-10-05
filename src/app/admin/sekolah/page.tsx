@@ -1,8 +1,9 @@
 'use client';
 
+import { sc } from '@/lib/murid';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
-import { isBundledSchool, useSchools, useSchoolsStore, useUnpublishedDrafts } from '@/lib/schools';
+import { checklistOf, isBundledSchool, useSchools, useSchoolsStore, useUnpublishedDrafts } from '@/lib/schools';
 import css from '@/components/admin/admin.module.css';
 import ui from '@/components/ui.module.css';
 
@@ -25,7 +26,7 @@ export default function AdminSchoolsPage() {
       </div>
       <div className={css.list}>
         {rows.map(({ s, live }) => (
-          <Link key={s.id} href={'/admin/sekolah/' + s.id} className={css.listRow} data-school={s.id}>
+          <Link key={s.id} href={'/admin/sekolah/' + s.id} className={css.listRow} {...sc(s)}>
             <span className={ui.mono}>{s.mono}</span>
             <div className={css.listGrow}>
               <div className={css.listName}>
@@ -34,7 +35,7 @@ export default function AdminSchoolsPage() {
               </div>
               <div className={css.listMeta}>{s.name}</div>
               <div className={css.listMeta}>
-                {s.checklist.length} item checklist · {s.phases.length} tahapan · {s.faq.length} FAQ
+                {checklistOf(s).length} item checklist · {s.phases.length} tahapan · {s.faq.length} FAQ
                 {!live ? ' · belum tampil ke siswa' : !isBundledSchool(s.id) ? ' · sekolah baru' : overrides[s.id] ? ' · sudah diubah' : ''}
               </div>
             </div>

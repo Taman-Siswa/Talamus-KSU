@@ -7,19 +7,19 @@ import { ensureAdminSeed, homeFor, roleOf, useAuth, useCurrentUser, type Role } 
 import { trackPath } from '@/lib/nav';
 import { useSchoolsStore } from '@/lib/schools';
 import { activateUser, useStore } from '@/lib/store';
-import { accountMeta, initials } from '@/data/student';
+import { initials } from '@/data/student';
 import Icon, { type IconName } from './Icon';
+import StudentTopBar from './StudentTopBar';
 import css from './Shell.module.css';
 
 type NavItem = { href: string; label: string; icon: IconName };
 
 const NAV: Record<Role, NavItem[]> = {
   siswa: [
+    { href: '/katalog', label: 'Katalog', icon: 'navKatalog' },
     { href: '/checklist', label: 'Checklist', icon: 'navChecklist' },
-    { href: '/kalkulator', label: 'Kalkulator Syarat', icon: 'navKalkulator' },
     { href: '/timeline', label: 'Timeline', icon: 'navTimeline' },
-    { href: '/katalog', label: 'SMA Unggulan', icon: 'navKatalog' },
-    { href: '/faq', label: 'FAQ', icon: 'navFaq' },
+    { href: '/forum', label: 'Forum', icon: 'navForum' },
   ],
   admin: [
     { href: '/admin/sekolah', label: 'Database SMA', icon: 'database' },
@@ -113,22 +113,30 @@ export default function Shell({ children }: { children: ReactNode }) {
   const close = () => setSbOpen(false);
   const onProfil = pathname === '/profil';
   const name = user?.name || '';
-  const meta = accountMeta(user);
   const avatarColor = user?.profile?.color;
   // Student pages use the "Design system v2 Murid" frame, also when an admin previews them;
   // the sidebar follows the role, so an admin always keeps the way back to Database SMA.
   const studentFrame = role === 'siswa' || previewing;
 
+  // Every signed-in page wears the green "murid" skin, the admin's own pages included. Only the signed-out pages keep the base palette.
+  const skin = !!session && !isAuthPage;
+  useEffect(() => {
+    if (skin) document.documentElement.dataset.skin = 'murid';
+    else delete document.documentElement.dataset.skin;
+    return () => { delete document.documentElement.dataset.skin; };
+  }, [skin]);
+
   const blocked = !session && !isAuthPage;
   if (!authHydrated || blocked || (session && isAuthPage) || wrongSide) return <div className={css.root} />;
   if (isAuthPage) return <div className={css.authRoot}>{children}</div>;
 
+  // Admin: label and icon show the current mode. Student (Murid v3 design): they show the mode a click switches to.
+  const showsTarget = studentFrame ? !dark : dark;
   const modeToggle = (
-    // Label and icon show the current mode; clicking switches to the other one.
     <button type="button" className={css.nav} onClick={() => setDark(!dark)} role="switch" aria-checked={dark}
       title={dark ? 'Mode gelap aktif. Klik untuk ganti ke mode terang' : 'Mode terang aktif. Klik untuk ganti ke mode gelap'}>
-      <Icon name={dark ? 'moon' : 'sun'} />
-      <span className={css.label}>{dark ? 'Mode gelap' : 'Mode terang'}</span>
+      <Icon name={showsTarget ? 'moon' : 'sun'} />
+      <span className={css.label}>{showsTarget ? 'Mode gelap' : 'Mode terang'}</span>
     </button>
   );
   const menuButton = (
@@ -171,21 +179,20 @@ export default function Shell({ children }: { children: ReactNode }) {
                 <div className={css.avatar} data-av={avatarColor}>{initials(name)}</div>
                 <div className={css.who}>
                   <div className={css.name}>{name}</div>
-                  <div className={css.meta}>{meta}</div>
+                  <div className={css.meta}>Admin · TamanSchool</div>
                 </div>
               </Link>
             </div>
           </>
         ) : (
           <>
-            {/* Student design: the account sits on top (and opens Profil, where Keluar lives), mode toggle at the bottom. */}
+            {/* Student design: the account sits on top (and opens Profil), mode toggle and logo at the bottom. */}
             <div className={css.stHead}>
               <Link href="/profil" onClick={close} title={name} aria-label={'Profil ' + name} aria-current={onProfil ? 'page' : undefined}
                 className={[css.stWho, onProfil ? css.stWhoOn : ''].join(' ')}>
                 <div className={css.stAvatar} data-av={avatarColor}>{initials(name)}</div>
                 <div className={css.who}>
                   <div className={css.stName}>{name}</div>
-                  <div className={css.stMeta}>{meta}</div>
                 </div>
               </Link>
               {menuButton}
@@ -194,22 +201,35 @@ export default function Shell({ children }: { children: ReactNode }) {
               {NAV.siswa.map(n => <NavLink key={n.href} item={n} pathname={pathname} onClick={close} />)}
             </nav>
             {modeToggle}
+            <div className={css.stFoot}>
+              <span className={css.stFootFull}>{logo}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/logo-tamanschool-mark.svg" alt="tamanSchool" className={css.stFootMark} />
+            </div>
           </>
         )}
       </aside>
       {sbOpen && <div className={css.scrim} onClick={close} aria-hidden="true" />}
 
-      <main className={[css.main, studentFrame ? css.stMain : css.adminMain].join(' ')}>
-        <header className={studentFrame ? css.stTop : css.top}>
-          <button type="button" className={[css.iconBtn, css.burger].join(' ')} aria-label="Buka menu" aria-expanded={sbOpen}
-            onClick={() => setSbOpen(o => !o)}>
-            <Icon name="menu" size={studentFrame ? 20 : 22} />
-          </button>
-          {studentFrame ? <span className={css.stLogo}>{logo}</span> : null}
-        </header>
-        {/* Saved state, school data and "today" only exist in the browser, so pages render after hydration. */}
-        <div className={css.content}>{hydrated && schoolsHydrated ? children : null}</div>
-      </main>
+      {studentFrame ? (
+        <main className={[css.main, css.stMain].join(' ')}>
+          <div className={css.stPage}>
+            <StudentTopBar pathname={pathname} onMenu={() => setSbOpen(true)} />
+            {/* Saved state, school data and "today" only exist in the browser, so pages render after hydration. */}
+            <div className={css.stContent}>{hydrated && schoolsHydrated ? children : null}</div>
+          </div>
+        </main>
+      ) : (
+        <main className={[css.main, css.adminMain].join(' ')}>
+          <header className={css.top}>
+            <button type="button" className={[css.iconBtn, css.burger].join(' ')} aria-label="Buka menu" aria-expanded={sbOpen}
+              onClick={() => setSbOpen(o => !o)}>
+              <Icon name="menu" size={22} />
+            </button>
+          </header>
+          <div className={css.content}>{hydrated && schoolsHydrated ? children : null}</div>
+        </main>
+      )}
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { Inter, Red_Hat_Text } from 'next/font/google';
 import Shell from '@/components/Shell';
 import './globals.css';
 
@@ -9,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Checklist, kalkulator syarat, timeline, dan katalog untuk persiapan masuk SMA unggulan.',
 };
 
-// Same type stack as the Talamus FE: Satoshi (self-hosted) for display, Red Hat Text for body, Inter for numbers.
+// Same type stack as the Talamus FE: Satoshi for display, Red Hat Text for body, Inter for numbers.
 const satoshi = localFont({
   src: [
     { path: './fonts/Satoshi-Regular.otf', weight: '400', style: 'normal' },
@@ -20,8 +19,10 @@ const satoshi = localFont({
   variable: '--font-satoshi',
   display: 'swap',
 });
-const redhat = Red_Hat_Text({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-redhat', display: 'swap' });
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-inter', display: 'swap' });
+// Red Hat Text and Inter are self-hosted too (latin, variable weight), so a build without access to Google Fonts
+// does not silently fall back to Arial.
+const redhat = localFont({ src: './fonts/RedHatText-Variable.woff2', weight: '300 700', variable: '--font-redhat', display: 'swap', fallback: ['system-ui', 'sans-serif'] });
+const inter = localFont({ src: './fonts/Inter-Variable.woff2', weight: '100 900', variable: '--font-inter', display: 'swap', fallback: ['system-ui', 'sans-serif'] });
 
 // Applies the theme before first paint so it doesn't flash. Signed-out pages (login, daftar) are always dark;
 // signed-in users get their own saved choice.

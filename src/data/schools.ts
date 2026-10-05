@@ -1,4 +1,759 @@
 import type { School } from './types';
 
-// Catalog entries are created by the admin; no demo schools are preloaded.
-export const SCHOOLS: School[] = [];
+/**
+ * Two sample schools, holding only what the admin form can edit, so the student pages show exactly what an admin
+ * would enter. Page content (highlights, Tentang, Fasilitas, Alumni, Ulasan) follows the student design
+ * (Claude Design "Murid v3"); KTB's registration data comes from the marketing spreadsheet. Photos stay
+ * placeholders until the admin uploads some.
+ * The admin can edit them (saved as overrides) but not delete them; remove them here once real data is in.
+ */
+export const SCHOOLS: School[] = [
+  {
+    id: 'tn',
+    mono: 'TN',
+    short: 'Taruna Nusantara',
+    name: 'SMA Taruna Nusantara',
+    pill: 'Asrama Semi-Militer · Jawa Tengah',
+    tag: 'Sekolah berasrama semi-militer di 6 kampus',
+    color: 'merah',
+    location: 'Magelang (pusat) · Cimahi · Malang · Pagar Alam · IKN · Minahasa',
+    highlights: [
+      { icon: 'shield', t: 'Disiplin semi-militer', d: 'Pendidikan akademik, kepribadian, dan kesamaptaan jasmani berjalan bersama.' },
+      {
+        icon: 'spark',
+        t: 'Gratis + beasiswa penuh',
+        d: 'Untuk angkatan 2027/28, pendaftaran gratis dan siswa diterima dapat beasiswa penuh.',
+      },
+      { icon: 'cap', t: 'Lulusan 100% lanjut studi', d: 'Ke PTN, akademi TNI/Polri, kedinasan, maupun luar negeri (klaim sekolah).' },
+    ],
+    about: 'SMA Taruna Nusantara (SMA TN) adalah sekolah berasrama yang membentuk karakter, kedisiplinan, dan jiwa kepemimpinan dengan pendekatan semi-militer — tetapi tetap menekankan akademik yang kuat. Seluruh siswa tinggal di asrama dan mengikuti pembinaan fisik serta mental. Kini SMA TN berkembang menjadi beberapa kampus di berbagai daerah; penempatan kampus ditentukan panitia.',
+    profile: [
+      { k: 'BERDIRI', v: '14 Juli 1990' },
+      { k: 'PENGELOLA', v: 'LPTTN (Kemhan & Taman Siswa)' },
+      { k: 'KAMPUS PUSAT', v: 'Jl. Raya Purworejo Km 5, Magelang' },
+      { k: 'LUAS KAMPUS PUSAT', v: '± 23 hektare' },
+      { k: 'SISTEM', v: 'Asrama penuh, putra & putri' },
+      { k: 'JALUR', v: 'Reguler & prestasi' },
+    ],
+    curriculumCards: [
+      { t: 'Kurikulum Nasional', d: 'Peminatan IPA/IPS dengan standar akademik tinggi.' },
+      { t: 'Pembinaan kepribadian', d: 'Kepemimpinan, kebangsaan, dan karakter melalui kehidupan asrama.' },
+      { t: 'Kesamaptaan jasmani', d: 'Latihan fisik rutin sebagai bagian dari kurikulum.' },
+    ],
+    facilities: [
+      { icon: 'home', t: 'Asrama putra & putri' },
+      { icon: 'book', t: 'Laboratorium bahasa' },
+      { icon: 'wave', t: 'Kolam renang' },
+      { icon: 'users', t: 'Graha & Balairung Pancasila' },
+      { icon: 'shield', t: 'Lapangan upacara' },
+      { icon: 'trophy', t: 'Lapangan basket & olahraga' },
+      { icon: 'lab', t: 'Laboratorium sains' },
+      { icon: 'heart', t: 'Layanan kesehatan asrama' },
+    ],
+    alumni: [
+      {
+        k: 'PTN dalam negeri',
+        v: 58,
+        campuses: [
+          { n: 'UI', c: 38 },
+          { n: 'ITB', c: 34 },
+          { n: 'UGM', c: 31 },
+          { n: 'ITS', c: 18 },
+          { n: 'IPB', c: 14 },
+          { n: 'UNDIP', c: 12 },
+          { n: 'Lainnya', c: 22 },
+        ],
+      },
+      {
+        k: 'Akademi TNI/Polri & kedinasan',
+        v: 27,
+        campuses: [
+          { n: 'Akmil', c: 26 },
+          { n: 'Akpol', c: 18 },
+          { n: 'AAL', c: 11 },
+          { n: 'AAU', c: 10 },
+          { n: 'STAN/PKN', c: 8 },
+          { n: 'IPDN', c: 6 },
+        ],
+      },
+      {
+        k: 'Kampus luar negeri',
+        v: 8,
+        campuses: [
+          { n: 'NUS', c: 4 },
+          { n: 'NTU', c: 3 },
+          { n: 'TU Delft', c: 3 },
+          { n: 'Universitas di Jepang', c: 5 },
+        ],
+      },
+      {
+        k: 'Lainnya',
+        v: 7,
+        campuses: [
+          { n: 'PTS dalam negeri', c: 14 },
+          { n: 'Gap year', c: 4 },
+        ],
+      },
+    ],
+    alumniYear: 'Lulusan 2022–2025',
+    achievements: [
+      { t: 'Lulusan disebut 100% melanjutkan ke perguruan tinggi, akademi TNI/Polri, kedinasan, atau luar negeri.', yr: '' },
+      { t: '108 dari 700 perwira Prasetya Perwira TNI/Polri 2021 adalah alumni SMA TN.', yr: 'Jul 2021' },
+      { t: 'Lulusan angkatan XXVII–XXXII banyak diterima di UGM, ITB, dan UI.', yr: '' },
+    ],
+    achievementsUpdated: 'Okt 2024',
+    status: 'resmi',
+    banner: 'Pendaftaran 2027/28 RESMI dibuka 9–23 Sep 2026 di pensisru.tarunanusantara.id (gratis). Jadwal tahap setelah pendaftaran masih estimasi dari pola tahun-tahun lalu.',
+    reqs: [
+      {
+        k: 'Jalur reguler',
+        v: 'B. Indonesia, B. Inggris, Matematika, IPA (nilai pengetahuan sem 1–4): rata-rata per mapel ≥ 85 DAN nilai tiap semester ≥ 80.',
+        group: 'utama',
+        kind: 'nilai',
+      },
+      {
+        k: 'Jalur prestasi',
+        v: 'Rata-rata ≥ 80, tiap semester ≥ 75 — dengan juara 1–3 minimal tingkat kab/kota (OSN, O2SN, FLS2N, dll.) atau pernah ketua OSIS.',
+        group: 'utama',
+      },
+      {
+        k: 'Dokumen',
+        v: 'Rapor sem 1–4 legalisir, surat sehat dokter, surat pernyataan (kepsek, ortu, casis — format di bit.ly/PersyaratanPensisruSMATN), pas foto 4x6, kartu pelajar.',
+        group: 'utama',
+      },
+      { k: 'Nilai tambah', v: 'Opsional: hasil tes IQ ≥ 110 (HIMPSI, maks. 6 bulan) dan sertifikat TOEFL.', group: 'akademis' },
+      {
+        k: 'Tahapan',
+        v: 'Administrasi → tes akademik online → rikkes & wawancara → seleksi akhir offline (akademik, jasmani, psikologi).',
+        group: 'utama',
+      },
+      {
+        k: 'Nilai tiap semester (sem 1–4) di keempat mapel minimal 80',
+        v: 'Nilai tiap semester (sem 1–4) di keempat mapel minimal 80',
+        group: 'utama',
+        check: true,
+        id: 'sem',
+      },
+      {
+        k: 'Sehat jasmani & rohani (bisa mendapat surat keterangan sehat dok',
+        v: 'Sehat jasmani & rohani (bisa mendapat surat keterangan sehat dokter)',
+        group: 'utama',
+        check: true,
+        id: 'sehat',
+      },
+      {
+        k: 'Bersedia tinggal di asrama & ditempatkan di kampus mana pun',
+        v: 'Bersedia tinggal di asrama & ditempatkan di kampus mana pun',
+        group: 'utama',
+        check: true,
+        id: 'asrama',
+      },
+      { k: 'Usia maksimal 17 tahun per 1 Jul 2027', v: 'Usia maksimal 17 tahun per 1 Jul 2027', group: 'utama', kind: 'usia' },
+    ],
+    calc: { subjects: ['B. Indonesia', 'B. Inggris', 'Matematika', 'IPA'], sems: [], minAvg: 85, minSem: 80 },
+    phases: [
+      { l: 'Pendaftaran online', s: '2026-09-09', e: '2026-09-23', t: 'daftar', est: false },
+      { l: 'Seleksi administrasi', s: '2026-09-24', e: '2026-10-08', t: 'tes', est: true },
+      { l: 'Tes akademik online', s: '2026-10-12', e: '2026-10-16', t: 'tes', est: true },
+      { l: 'Rikkes & wawancara', s: '2026-11-02', e: '2026-11-13', t: 'tes', est: true },
+      { l: 'Seleksi akhir offline (akademik, jasmani, psikologi)', s: '2026-12-01', e: '2026-12-10', t: 'tes', est: true },
+      { l: 'Pengumuman', s: '2026-12-20', e: '2026-12-22', t: 'umum', est: true },
+    ],
+    checklist: [
+      {
+        id: 'akun',
+        l: 'Buat akun casis di pensisru.tarunanusantara.id',
+        dl: '2026-09-20',
+        f: [
+          { k: 'email', p: 'Email aktif' },
+          { k: 'pass', p: 'Password akun (tersimpan di perangkat ini saja)' },
+        ],
+      },
+      {
+        id: 'rapor',
+        l: 'Foto rapor sem 1–4 yang sudah dilegalisir',
+        dl: '2026-09-20',
+        note: 'Nilai pengetahuan B.Indo, B.Ing, Matematika, IPA',
+      },
+      {
+        id: 'surat',
+        l: 'Surat pernyataan kepsek, ortu, dan casis',
+        dl: '2026-09-21',
+        note: 'Format resmi: bit.ly/PersyaratanPensisruSMATN',
+      },
+      { id: 'sehat', l: 'Surat keterangan sehat dari dokter', dl: '2026-09-21' },
+      { id: 'iq', l: 'Opsional: tes IQ ≥ 110 (HIMPSI) & TOEFL sebagai nilai tambah', dl: '2026-09-21' },
+      { id: 'prestasi', l: 'Scan sertifikat prestasi (wajib untuk jalur prestasi)', dl: '2026-09-21' },
+    ],
+    docs: [
+      {
+        l: 'Portal Pensisru 2027/28',
+        m: 'pensisru.tarunanusantara.id — pendaftaran resmi, dibuka 9–23 Sep 2026',
+        h: 'https://pensisru.tarunanusantara.id',
+        arsip: false,
+      },
+      {
+        l: 'Format surat pernyataan (kepsek, ortu, casis)',
+        m: 'bit.ly/PersyaratanPensisruSMATN',
+        h: 'https://bit.ly/PersyaratanPensisruSMATN',
+        arsip: false,
+      },
+      {
+        l: 'Pedoman Pensisru 2026/27',
+        m: 'Referensi tahapan & ambang nilai tahun lalu',
+        h: 'https://tarunanusantara.sch.id',
+        arsip: true,
+      },
+    ],
+    faq: [
+      {
+        q: 'Nilai rata-rata anak saya di bawah 85, masih bisa daftar?',
+        a: 'Bisa lewat jalur prestasi: rata-rata ≥ 80 dan tiap semester ≥ 75, dengan syarat juara 1–3 minimal tingkat kab/kota (akademik, olahraga, seni) atau pernah menjabat ketua OSIS. Di bawah itu, berkas gugur di seleksi administrasi.',
+      },
+      {
+        q: 'Berapa biayanya?',
+        a: 'Untuk angkatan 2027/28 pendaftaran dan seleksi gratis, dan siswa yang diterima mendapat beasiswa penuh selama pendidikan.',
+      },
+      {
+        q: 'Bisa pilih kampus yang mana?',
+        a: 'Tidak — penempatan di salah satu dari 6 kampus (Magelang, Cimahi, Malang, Pagar Alam, IKN, Langowan) ditentukan panitia penerimaan.',
+      },
+      {
+        q: 'Tes IQ wajib?',
+        a: 'Tidak wajib, tapi hasil IQ ≥ 110 jadi nilai tambah. Harus dari psikolog anggota HIMPSI dan berlaku maksimal 6 bulan sebelum pendaftaran.',
+      },
+      {
+        q: 'Seleksinya seperti apa?',
+        a: 'Empat tahap: seleksi administrasi → tes akademik online → pemeriksaan kesehatan & wawancara → seleksi akhir offline yang menilai akademik, jasmani, dan psikologi.',
+      },
+    ],
+    info: {
+      kind: 'Swasta',
+      province: 'Jawa Tengah',
+      city: 'Magelang',
+      campusCount: 6,
+      boarding: 'Asrama Semi-Militer',
+      curriculum: ['Kurikulum Nasional'],
+      funding: ['Beasiswa'],
+      admissionYear: '2027-2028',
+    },
+    eligibility: {
+      dob: { max: 17, at: '2027-07-01', q: 'Tanggal lahir (maks. 17 tahun per 1 Jul 2027)' },
+      items: [
+        { id: 'sem', q: 'Nilai tiap semester (sem 1–4) di keempat mapel minimal 80' },
+        { id: 'sehat', q: 'Sehat jasmani & rohani (bisa mendapat surat keterangan sehat dokter)' },
+        { id: 'asrama', q: 'Bersedia tinggal di asrama & ditempatkan di kampus mana pun' },
+      ],
+    },
+    calcNote: '',
+    reviews: [
+      {
+        name: 'Alumni A',
+        role: 'Angkatan 30 · kini di ITB',
+        title: 'Tiga tahun yang mengubah cara aku belajar',
+        text: 'Waktu pertama masuk, aku kira yang paling berat itu pelajarannya. Ternyata yang paling berat justru ngatur diri sendiri: bangun jam empat, apel, kelas sampai sore, belajar malam, dan semua itu tanpa orang tua yang ngingetin.\n\nBulan-bulan awal aku sering kecapekan dan nilaiku sempat turun. Yang bikin bertahan itu teman seangkatan. Kami dari daerah yang beda-beda, tapi karena tinggal bareng, kami jadi saling nutup kekurangan. Ada yang jago matematika, ada yang jago ngatur jadwal, ada yang selalu punya stok mi instan.\n\nSekarang di kampus aku baru sadar betapa berharganya kebiasaan itu. Tugas numpuk, organisasi jalan, dan aku nggak panik karena sudah terbiasa. Buat adik-adik yang mau daftar: siapkan fisik dan mental, bukan cuma nilai.',
+        rating: 5,
+        date: '2026-08',
+      },
+      {
+        name: 'Alumni B',
+        role: 'Angkatan 31 · kini di Akmil',
+        title: 'Disiplinnya nyata, bukan formalitas',
+        text: 'Latihan fisik rutin di sini bukan sekadar syarat. Waktu seleksi Akmil, aku sudah terbiasa dengan pola latihan dan tes kesamaptaan, jadi bisa fokus ke tahap lain.\n\nKekurangannya, waktu luang memang sedikit dan kadang rindu rumah. Tapi pembina dan pengasuh cukup peka. Kalau ada yang kelihatan down, biasanya langsung diajak ngobrol.',
+        rating: 4,
+        date: '2026-05',
+      },
+    ],
+    cost: {
+      long: 'Untuk angkatan 2027/28: pendaftaran dan seleksi gratis, siswa yang diterima mendapat beasiswa penuh selama pendidikan. Cek pedoman resmi untuk biaya pribadi (seragam, perlengkapan).',
+    },
+  },
+  {
+    id: 'ktb',
+    mono: 'KTB',
+    short: 'Kemala Taruna Bhayangkara',
+    name: 'SMA Kemala Taruna Bhayangkara',
+    pill: 'Swasta · Tersedia · Jawa Barat',
+    tag: 'Sekolah berasrama Polri berkurikulum IB',
+    color: 'kuning',
+    location: 'Gunung Sindur, Bogor, Jawa Barat · asrama 3 tahun',
+    highlights: [
+      { icon: 'globe', t: 'IB Diploma Programme', d: 'Kelas X kurikulum nasional, kelas XI–XII IB Diploma Programme.' },
+      { icon: 'spark', t: 'Beasiswa penuh Polri', d: 'Seluruh biaya pendidikan ditanggung Polri selama 3 tahun (2027/28).' },
+      { icon: 'home', t: 'Kampus standar internasional', d: 'Dirancang oleh firma arsitektur DLR Group.' },
+    ],
+    about: 'SMA Kemala Taruna Bhayangkara adalah kontribusi Polri untuk menjaring dan membina 1% anak muda terbaik Indonesia dari seluruh penjuru negeri. Sekolah ini menyiapkan siswa melanjutkan ke 100 universitas top dunia, universitas terbaik Indonesia, atau akademi kedinasan — dengan nilai-nilai kebhayangkaraan sebagai fondasi karakter.',
+    profile: [
+      { k: 'PENGELOLA', v: 'Polri' },
+      { k: 'LOKASI', v: 'Kp. Tapos, Gunungsindur, Bogor' },
+      { k: 'KURIKULUM', v: 'Nasional (X) + IB DP (XI–XII)' },
+      { k: 'KUOTA', v: '180 siswa per angkatan' },
+      { k: 'SISTEM', v: 'Asrama penuh' },
+      { k: 'SELEKSI', v: 'Tanpa ambang rapor; tes NST' },
+    ],
+    curriculumCards: [
+      { t: 'Kurikulum Nasional — Kelas X', d: 'Fondasi akademik sebelum masuk program IB.' },
+      { t: 'IB Diploma Programme — Kelas XI–XII', d: 'Program pra-universitas internasional, pengantar bahasa Inggris.' },
+      { t: 'Bimbingan masuk universitas', d: 'Pendampingan intensif ke kampus top dunia, Indonesia, dan akademi kedinasan.' },
+    ],
+    facilities: [
+      { icon: 'home', t: 'Asrama siswa' },
+      { icon: 'book', t: 'Perpustakaan digital' },
+      { icon: 'lab', t: 'Laboratorium sains' },
+      { icon: 'pc', t: 'Ruang kelas modern' },
+      { icon: 'users', t: 'Kegiatan kokurikuler (drumband, dll)' },
+      { icon: 'trophy', t: 'Fasilitas olahraga' },
+      { icon: 'heart', t: 'Layanan kesehatan' },
+      { icon: 'globe', t: 'Kampus rancangan DLR Group' },
+    ],
+    alumni: [
+      {
+        k: 'PTN dalam negeri',
+        v: 45,
+        campuses: [
+          { n: 'UI', c: 16 },
+          { n: 'ITB', c: 14 },
+          { n: 'UGM', c: 12 },
+          { n: 'UNPAD', c: 6 },
+          { n: 'Lainnya', c: 7 },
+        ],
+      },
+      {
+        k: 'Kampus luar negeri',
+        v: 25,
+        campuses: [
+          { n: 'University of Melbourne', c: 5 },
+          { n: 'NUS', c: 4 },
+          { n: 'UNSW', c: 4 },
+          { n: 'TU Munich', c: 3 },
+          { n: 'Lainnya', c: 9 },
+        ],
+      },
+      {
+        k: 'Akademi Polri & kedinasan',
+        v: 22,
+        campuses: [
+          { n: 'Akpol', c: 18 },
+          { n: 'STIN', c: 3 },
+          { n: 'STAN/PKN', c: 3 },
+        ],
+      },
+      {
+        k: 'Lainnya',
+        v: 8,
+        campuses: [
+          { n: 'PTS dalam negeri', c: 6 },
+          { n: 'Gap year', c: 2 },
+        ],
+      },
+    ],
+    alumniYear: 'Lulusan 2022–2025',
+    achievements: [
+      { t: 'Terakreditasi sebagai IB World School untuk Diploma Programme.', yr: '' },
+      { t: 'Tim TamanSchool: tambahkan prestasi siswa terbaru dari laman resmi / IG @kemalatarunabhayangkara.', yr: '' },
+    ],
+    achievementsUpdated: 'Sep 2026',
+    status: 'est',
+    banner: 'Jadwal mengikuti informasi pendaftaran 2027/28 dari SMA Kemala Taruna Bhayangkara. Cek ulang tanggal tiap tahap di website sekolah.',
+    reqs: [
+      { k: 'Beriman dan bertakwa kepada Tuhan Yang Maha Esa.', v: 'Beriman dan bertakwa kepada Tuhan Yang Maha Esa.', group: 'utama' },
+      { k: 'Warga Negara Indonesia (WNI).', v: 'Warga Negara Indonesia (WNI).', group: 'utama', check: true, id: 'wni' },
+      { k: 'Setia kepada NKRI, Pancasila, dan UUD 1945.', v: 'Setia kepada NKRI, Pancasila, dan UUD 1945.', group: 'utama' },
+      { k: 'Sehat jasmani dan rohani.', v: 'Sehat jasmani dan rohani.', group: 'utama', check: true, id: 'sehat' },
+      {
+        k: 'Batas usia: belum genap berusia 17 tahun pada tanggal 1 Juli 202',
+        v: 'Batas usia: belum genap berusia 17 tahun pada tanggal 1 Juli 2027.',
+        group: 'utama',
+        kind: 'usia',
+      },
+      {
+        k: 'Tidak sedang terikat kontrak/kewajiban beasiswa penuh dari lemba',
+        v: 'Tidak sedang terikat kontrak/kewajiban beasiswa penuh dari lembaga lain.',
+        group: 'utama',
+        check: true,
+        id: 'kontrak',
+      },
+      {
+        k: 'Bersedia tinggal di asrama selama 3 tahun penuh masa studi.',
+        v: 'Bersedia tinggal di asrama selama 3 tahun penuh masa studi.',
+        group: 'utama',
+        check: true,
+        id: 'asrama',
+      },
+      {
+        k: 'Nilai minimal 80 pada mapel Matematika, IPA, dan Bahasa Inggris ',
+        v: 'Nilai minimal 80 pada mapel Matematika, IPA, dan Bahasa Inggris semester 1–4 SMP/sederajat.',
+        group: 'akademis',
+        kind: 'nilai',
+      },
+      { k: 'Tidak ada tinggi/berat badan minimal.', v: 'Tidak ada tinggi/berat badan minimal.', group: 'fisik' },
+      { k: 'Berkacamata boleh mendaftar.', v: 'Berkacamata boleh mendaftar.', group: 'fisik' },
+    ],
+    calc: { subjects: ['Matematika', 'IPA', 'B. Inggris'], sems: [], minAvg: 80, minSem: null },
+    phases: [
+      {
+        l: 'Pendaftaran Online',
+        s: '2026-09-28',
+        e: '2026-10-28',
+        t: 'daftar',
+        est: true,
+        group: 'Pendaftaran',
+        mode: 'Online',
+        location: 'Website SMA KTB',
+      },
+      {
+        l: 'Tryout NST 1 (TPA)',
+        s: '2026-11-14',
+        e: '2026-11-15',
+        t: 'tes',
+        est: true,
+        group: 'Tahap I',
+        mode: 'Online',
+        location: 'Portal Calon Siswa & Portal Ujian',
+      },
+      {
+        l: 'NST 1 (TPA)',
+        s: '2026-12-12',
+        e: '2026-12-13',
+        t: 'tes',
+        est: true,
+        group: 'Tahap I',
+        mode: 'Online',
+        location: 'Portal Calon Siswa & Portal Ujian',
+        details: 'Bahasa pengantar: Bahasa Indonesia.\nMateri ujian: Verbal, Numerikal, Logikal, Spasial.',
+      },
+      {
+        l: 'Pengumuman NST 1',
+        s: '2026-12-24',
+        e: '2026-12-24',
+        t: 'umum',
+        est: true,
+        group: 'Tahap I',
+        mode: 'Online',
+        location: 'Portal Calon Siswa & Portal Ujian',
+      },
+      { l: 'Tryout NST 2 (Tes Mapel)', s: '2027-01-16', e: '2027-01-16', t: 'tes', est: true, group: 'Tahap 2', mode: 'Online/Onsite' },
+      {
+        l: 'NST 2 (Tes Mapel)',
+        s: '2027-01-13',
+        e: '2027-01-13',
+        t: 'tes',
+        est: true,
+        group: 'Tahap 2',
+        mode: 'Onsite',
+        location: 'Polda pilihan pendaftaran',
+        details: 'Bahasa pengantar: Bahasa Inggris.\nMateri ujian: Matematika, IPA, dan Bahasa Inggris.',
+      },
+      {
+        l: 'Pengumuman NST 2',
+        s: '2027-02-08',
+        e: '2027-02-08',
+        t: 'umum',
+        est: true,
+        group: 'Tahap 2',
+        mode: 'Online',
+        location: 'Portal Calon Siswa',
+      },
+      {
+        l: 'Seleksi Terpusat',
+        s: '2027-03-22',
+        e: '2027-03-25',
+        t: 'tes',
+        est: true,
+        mode: 'Onsite',
+        location: 'SMA Kemala Taruna Bhayangkara',
+        details: 'Tes:\n1. Pemeriksaan Jasmani & Kesehatan (Rikkes)\n2. Uji Kesamaptaan Jasmani (UKJ): lari, push-up, sit-up, shuttle run, serta pull-up (putra) / chinning (putri)\n3. Pemeriksaan psikologi, mental & kepribadian, serta ideologi\n4. Tes akademik lanjutan & IELTS Prediction Test (tidak ada batas skor minimal)\n5. Leaderless Group Discussion (LGD): simulasi diskusi kelompok berbasis metode IB untuk menilai berpikir kritis, kepemimpinan, dan komunikasi\n6. Wawancara mandiri',
+      },
+    ],
+    checklist: [
+      {
+        id: 'akun',
+        l: 'Buat akun & isi formulir pendaftaran di website SMA KTB',
+        dl: '2026-10-28',
+        est: true,
+        note: 'Satu akun per siswa',
+        f: [
+          { k: 'email', p: 'Email akun' },
+          { k: 'pass', p: 'Password akun (tersimpan di perangkat ini saja)' },
+        ],
+      },
+      {
+        id: 'foto',
+        l: 'Pas foto berwarna terbaru',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'identitas',
+        l: 'Identitas pendaftar',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'nisn',
+        l: 'Bukti NISN',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'rapor',
+        l: 'Scan rapor semester 1–4',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'rekomendasi',
+        l: 'Scan surat rekomendasi dari kepala sekolah/guru/sekolah',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: 'https://drive.google.com/file/d/14qc2UlCfPE18QOLL0TioMmQ3noHoXmeU/view?usp=sharing',
+        },
+      },
+      {
+        id: 'ktp-ayah',
+        l: 'Scan KTP Ayah/Wali 1',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'gaji-ayah',
+        l: 'Scan slip gaji/surat keterangan penghasilan Ayah/Wali 1',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: 'https://drive.google.com/file/d/1Wqj_5iMjb5-djaswO9dLNOdHRYLOkHOa/view?usp=sharing',
+        },
+      },
+      {
+        id: 'kk',
+        l: 'Scan Kartu Keluarga',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'ktp-ibu',
+        l: 'Scan KTP Ibu/Wali 2',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'gaji-ibu',
+        l: 'Scan slip gaji/surat keterangan penghasilan Ibu/Wali 2',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: 'https://drive.google.com/file/d/1Wqj_5iMjb5-djaswO9dLNOdHRYLOkHOa/view?usp=sharing',
+        },
+      },
+      {
+        id: 'listrik',
+        l: 'Scan tagihan listrik 3 bulan terakhir / surat keterangan biaya listrik',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: 'https://drive.google.com/file/d/1UK5ATQ-Xgtw5y1XZC4DcDgBxAa8l6y0m/view?usp=sharing',
+        },
+      },
+      {
+        id: 'rumah',
+        l: 'Foto rumah tampak depan, ruang tamu, dan dapur',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'pernyataan',
+        l: 'Scan surat pernyataan pendaftaran SPMB oleh calon siswa dan orang tua/wali',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: true,
+          rules: [
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: 'https://drive.google.com/file/d/1tYTXWv5NyhXsvxZwDAGnzlvzxl8ciefK/view?usp=sharing',
+        },
+      },
+      {
+        id: 'iq',
+        l: 'Scan hasil tes IQ',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: false,
+          rules: [
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: '',
+        },
+      },
+      {
+        id: 'prestasi',
+        l: 'Scan sertifikat prestasi / bukti medali / bukti lain yang sah',
+        dl: '2026-10-28',
+        est: true,
+        document: {
+          required: false,
+          rules: [
+            { format: 'Gambar (PNG/JPG)', maxMB: '5' },
+            { format: 'Dokumen (PDF)', maxMB: '10' },
+          ],
+          template: '',
+        },
+      },
+    ],
+    docs: [
+      {
+        l: 'Laman admisi Akademi Kader Bangsa',
+        m: 'schools.kaderbangsa.foundation/admissions — rilis SPMB 2027/28 di sini',
+        h: 'https://schools.kaderbangsa.foundation/admissions',
+        arsip: false,
+      },
+      {
+        l: 'Panduan & FAQ SPMB 2026/27',
+        m: 'bit.ly/PanduanSPMB-KTB — pola pendaftaran, try out, & NST tahun lalu',
+        h: 'https://bit.ly/PanduanSPMB-KTB',
+        arsip: true,
+      },
+    ],
+    faq: [
+      {
+        q: 'Bagaimana jika ada nilai rapor di bawah 80?',
+        a: 'Calon siswa diwajibkan memenuhi standar nilai rapor untuk ketiga mata pelajaran yang telah disebutkan. Pengecualian standar nilai rapor hanya dapat diberikan jika siswa mendapatkan undangan prestasi tingkat nasional untuk OSN, O2SN, FL3SN, dan OPSI. Jika kamu memiliki prestasi lainnya yang dapat dipertimbangkan, ajukan ke email admission@sma-ktb.sch.id.',
+      },
+      {
+        q: 'Bagaimana jika sekolah menggunakan Kurikulum Cambridge?',
+        a: 'Lakukan konversi nilai ke skala 0–100 melalui sekolah asal, lalu unggah Surat Keterangan Konversi Nilai Resmi yang ditandatangani pihak sekolah di bagian unggah rapor.',
+      },
+      {
+        q: 'Bagaimana jika siswa mengikuti program Akselerasi (sehingga rapor tidak sampai 4–6 semester standar)?',
+        a: 'Lampirkan Surat Keterangan Akselerasi Resmi dari sekolah asal saat pengisian formulir di bagian unggah rapor.',
+      },
+      {
+        q: 'Apakah menerima siswa pindahan (mutasi)?',
+        a: 'Tidak. SMA Kemala Taruna Bhayangkara tidak menerima siswa pindahan di tengah masa studi.',
+      },
+      {
+        q: 'Untuk apa dokumen finansial & rumah (slip gaji/token listrik/foto rumah)?',
+        a: 'Dokumen-dokumen ini HANYA digunakan untuk pemetaan data demografi internal sekolah. Data ini TIDAK MEMENGARUHI hasil seleksi akademis maupun kelulusan pendaftar.',
+      },
+    ],
+    info: {
+      kind: 'Swasta',
+      province: 'Jawa Barat',
+      city: 'Kabupaten Bogor',
+      boarding: 'Tersedia',
+      curriculum: ['International Baccalaureate'],
+      funding: ['Beasiswa'],
+      admissionYear: '2027-2028',
+    },
+    eligibility: {
+      dob: { max: 16, at: '2027-07-01', q: 'Tanggal lahir (maks. 16 tahun per 1 Jul 2027)' },
+      items: [
+        { id: 'wni', q: 'Warga Negara Indonesia (WNI).' },
+        { id: 'sehat', q: 'Sehat jasmani dan rohani.' },
+        { id: 'kontrak', q: 'Tidak sedang terikat kontrak/kewajiban beasiswa penuh dari lembaga lain.' },
+        { id: 'asrama', q: 'Bersedia tinggal di asrama selama 3 tahun penuh masa studi.' },
+      ],
+    },
+    calcNote: '',
+    reviews: [
+      {
+        name: 'Alumni C',
+        role: 'Kini di universitas luar negeri',
+        title: 'IB di sini menantang, tapi kamu nggak sendirian',
+        text: 'Program IB-nya berat: esai panjang, riset mandiri, dan presentasi hampir tiap minggu. Di awal aku sempat ragu bisa ngikutin.\n\nYang bikin beda itu guru-gurunya. Mereka sabar ngebimbing draf esai sampai berkali-kali dan selalu kasih masukan yang spesifik. Extended Essay-ku dulu direvisi enam kali, dan justru itu yang jadi bahan utama aplikasi kuliahku.\n\nKalau kamu suka belajar dengan cara bertanya dan berdiskusi, bukan cuma ngerjain soal, sekolah ini cocok banget.',
+        rating: 5,
+        date: '2026-09',
+      },
+      {
+        name: 'Alumni D',
+        role: 'Kini di Akpol',
+        title: 'Asrama mengajarkan tanggung jawab',
+        text: 'Kehidupan asrama ngajarin aku tanggung jawab dari hal kecil: kamar rapi, tepat waktu, jaga barang sendiri. Kedengarannya sepele, tapi kebiasaan itu yang paling kepakai sekarang.\n\nAkademiknya juga serius, jadi harus pintar bagi waktu antara kegiatan fisik dan belajar.',
+        rating: 4,
+        date: '2026-06',
+      },
+    ],
+    cost: {
+      long: 'Pendaftaran dan seleksi gratis. Untuk tahun ajaran 2027/28, seluruh biaya pendidikan ditanggung penuh oleh Polri selama 3 tahun.',
+    },
+  },
+];

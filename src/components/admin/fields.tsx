@@ -33,19 +33,21 @@ export function Field({ label, note, required, group, className, children }: {
 }
 
 /** Underlined text input. `strong` is the heavier style used for a school's name. */
-export function TextInput({ value, onChange, placeholder, type = 'text', maxLength, min, max, invalid, strong, medium, code, label }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; type?: 'text' | 'date' | 'url' | 'number';
+export function TextInput({ value, onChange, placeholder, type = 'text', maxLength, min, max, invalid, strong, medium, code, label, list }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: 'text' | 'date' | 'month' | 'url' | 'number';
   maxLength?: number; min?: string; max?: string; invalid?: boolean; strong?: boolean;
   /** weight 500, for a row's main line (task title, question) */
   medium?: boolean;
   code?: boolean;
   /** accessible name when there is no visible label */
   label?: string;
+  /** id of a <datalist> with suggestions */
+  list?: string;
 }) {
   return (
     <input className={cx(css.input, strong && css.inputStrong, medium && css.inputMedium, code && css.inputCode, invalid && css.inputBad)}
       type={type} value={value} placeholder={placeholder} maxLength={maxLength} min={min} max={max}
-      aria-label={label} aria-invalid={invalid || undefined} onChange={e => onChange(e.target.value)} />
+      aria-label={label} list={list} aria-invalid={invalid || undefined} onChange={e => onChange(e.target.value)} />
   );
 }
 
@@ -153,7 +155,10 @@ export function AddButton({ onClick, children }: { onClick: () => void; children
   );
 }
 
-function RowTools({ i, count, onMove, onRemove }: { i: number; count: number; onMove: (to: number) => void; onRemove: () => void }) {
+/** `removeLabel` turns the remove icon into a labelled button, for rows big enough that a bare × is easy to miss. */
+export function RowTools({ i, count, onMove, onRemove, removeLabel }: {
+  i: number; count: number; onMove: (to: number) => void; onRemove: () => void; removeLabel?: string;
+}) {
   return (
     <>
       <button type="button" className={css.rowBtn} onClick={() => onMove(i - 1)} disabled={i === 0} aria-label="Naikkan" title="Naikkan">
@@ -162,14 +167,20 @@ function RowTools({ i, count, onMove, onRemove }: { i: number; count: number; on
       <button type="button" className={css.rowBtn} onClick={() => onMove(i + 1)} disabled={i === count - 1} aria-label="Turunkan" title="Turunkan">
         <Icon name="chevronDown" size={14} stroke={1.8} />
       </button>
-      <button type="button" className={cx(css.rowBtn, css.rowBtnDanger)} onClick={onRemove} aria-label="Hapus" title="Hapus">
-        <Icon name="x" size={14} stroke={1.8} />
-      </button>
+      {removeLabel ? (
+        <button type="button" className={css.removeBtn} onClick={onRemove}>
+          <Icon name="trash" size={14} stroke={1.8} />{removeLabel}
+        </button>
+      ) : (
+        <button type="button" className={cx(css.rowBtn, css.rowBtnDanger)} onClick={onRemove} aria-label="Hapus" title="Hapus">
+          <Icon name="x" size={14} stroke={1.8} />
+        </button>
+      )}
     </>
   );
 }
 
-const moveIn = <T,>(items: T[], i: number, to: number) => {
+export const moveIn = <T,>(items: T[], i: number, to: number) => {
   if (to < 0 || to >= items.length) return items;
   const next = items.slice();
   [next[i], next[to]] = [next[to], next[i]];
@@ -177,7 +188,7 @@ const moveIn = <T,>(items: T[], i: number, to: number) => {
 };
 
 /** Repeating rows, each in a bordered card with its label and reorder/remove buttons on top. */
-export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLabel, rowBadge, empty }: {
+export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLabel, rowBadge, empty, removeLabel, extra }: {
   items: T[];
   onChange: (items: T[]) => void;
   /** a new, empty row */
@@ -188,6 +199,10 @@ export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLab
   /** optional pill before the row label */
   rowBadge?: (item: T) => ReactNode;
   empty?: string;
+  /** text for a labelled remove button, e.g. "Hapus ulasan" */
+  removeLabel?: string;
+  /** more add buttons next to the main one, e.g. a row that comes with its own fields */
+  extra?: ReactNode;
 }) {
   const replace = (i: number, item: T) => onChange(items.map((x, j) => (j === i ? item : x)));
   return (
@@ -199,12 +214,15 @@ export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLab
             {rowBadge ? rowBadge(item) : null}
             <span className={css.rowLabel}>{rowLabel(item, i)}</span>
             <RowTools i={i} count={items.length} onMove={to => onChange(moveIn(items, i, to))}
-              onRemove={() => onChange(items.filter((_, j) => j !== i))} />
+              onRemove={() => onChange(items.filter((_, j) => j !== i))} removeLabel={removeLabel} />
           </div>
           {render(item, patch => replace(i, { ...item, ...patch }), i)}
         </div>
       ))}
-      <AddButton onClick={() => onChange([...items, blank()])}>{addLabel}</AddButton>
+      <div className={css.addRow}>
+        <AddButton onClick={() => onChange([...items, blank()])}>{addLabel}</AddButton>
+        {extra}
+      </div>
     </>
   );
 }
@@ -259,5 +277,38 @@ export function Section({ id, title, icon, status, collapsible, open = true, onT
       ) : <div className={css.sectionHead}>{head}</div>}
       {open ? <div className={css.sectionBody}>{children}</div> : null}
     </section>
+  );
+}
+
+/**
+ * A compact list: one line per item (inputs side by side, tools at the end), for short rows such as a facility or a
+ * highlight. `cols` is the grid template of the inputs, e.g. "2fr 3fr".
+ */
+export function LineList<T>({ items, onChange, blank, render, addLabel, empty, cols, head }: {
+  items: T[];
+  onChange: (items: T[]) => void;
+  blank: () => T;
+  render: (item: T, set: (patch: Partial<T>) => void, i: number) => ReactNode;
+  addLabel: string;
+  empty?: string;
+  cols: string;
+  /** column titles above the first line */
+  head?: string[];
+}) {
+  const style = { '--cols': cols } as React.CSSProperties;
+  return (
+    <div className={css.lines}>
+      {head && items.length > 0 ? <div className={css.lineHead} style={style}>{head.map(h => <span key={h}>{h}</span>)}<span /></div> : null}
+      {items.map((item, i) => (
+        <div key={i} className={css.lineItem} style={style}>
+          {render(item, patch => onChange(items.map((x, j) => (j === i ? { ...x, ...patch } : x))), i)}
+          <span className={css.lineTools}>
+            <RowTools i={i} count={items.length} onMove={to => onChange(moveIn(items, i, to))} onRemove={() => onChange(items.filter((_, j) => j !== i))} />
+          </span>
+        </div>
+      ))}
+      {items.length === 0 && empty ? <p className={css.empty}>{empty}</p> : null}
+      <AddButton onClick={() => onChange([...items, blank()])}>{addLabel}</AddButton>
+    </div>
   );
 }

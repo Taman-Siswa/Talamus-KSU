@@ -63,34 +63,32 @@
 /* Admin pages keep the admin type ("Design system v2"); ui.module.css reads these on the shared Profil page. */
 .adminMain { --ui-text: var(--font-text); --ui-display: var(--font-display); }
 
-/* ---------- Student frame ("Design system v2 Murid"), also used when an admin previews student pages ---------- */
-.stMain { font: 400 15px/1.5 var(--font-sys); }
-.stTop {
-  width: 100%; max-width: 1020px; margin: 0 auto 18px; padding: 26px 34px 0;
-  display: flex; align-items: center; justify-content: space-between; min-height: 58px;
-}
-.stLogo { display: flex; margin-left: auto; }
-.stLogo .brandmark { height: 18px; opacity: 0.85; }
-.stMain .content { max-width: 1020px; padding: 0 34px 90px; }
+/* ---------- Student frame ("Murid v3"), also used when an admin previews student pages ---------- */
+.stMain { font: 400 15px/1.5 var(--font-text); }
+.stPage { width: 100%; max-width: 1180px; margin: 0 auto; padding: 22px 32px 90px; }
+.stContent { width: 100%; }
 
-/* Student sidebar: account on top, flat 10px-radius nav, mode toggle at the bottom. */
-.student .sidebar { width: 240px; padding: 20px 10px; gap: 3px; border-right-color: var(--hair); font-family: var(--font-sys); }
+/* Student sidebar: account on top, flat 10px-radius nav, mode toggle and logo at the bottom. */
+.student .sidebar { width: 240px; padding: 20px 10px; gap: 3px; border-right-color: var(--hair); font-family: var(--font-text); overflow-y: auto; }
 .stHead { display: flex; align-items: center; gap: 10px; padding: 4px 4px 14px; border-bottom: 1px solid var(--hair); margin-bottom: 10px; }
-.stWho, .stWho:hover { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; color: inherit; border-radius: 10px; }
+.stWho, .stWho:hover { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; color: inherit; border-radius: 8px; transition: box-shadow 150ms ease, background 150ms ease; }
 .stAvatar {
   width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center;
-  background: var(--av-bg); color: var(--av-ink); font: 700 13px/1 var(--font-sys);
+  background: var(--brand-bg); color: var(--brand-ink); font: 700 13px/1 var(--font-text);
 }
-.stName { font: 600 13px/1.25 var(--font-sys); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stWho:hover .stAvatar { box-shadow: 0 0 0 3px var(--chip); }
+.stName { font: 600 13px/1.25 var(--font-text); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stWhoOn .stName { color: var(--nav-sel-ink); }
-/* not clipped: like the design, a slightly long line may run into the gap before the menu button */
-.stMeta { font: 400 11px/1.3 var(--font-sys); color: var(--sub); white-space: nowrap; }
 .student .iconBtn { width: auto; height: auto; padding: 6px; border-radius: 8px; }
-.student .iconBtn:hover { color: var(--sub); }
-.student .scroll { gap: 3px; }
-.student .nav { gap: 11px; padding: 10px 12px; border-radius: 10px; font: 500 14px/1 var(--font-sys); color: var(--sub); }
-.student .nav:hover { background: var(--nav-wash); color: var(--ink); }
+.student .iconBtn:hover { background: var(--chip); color: var(--sub); }
+.student .scroll { gap: 3px; flex: 1; }
+.student .nav { gap: 11px; padding: 10px 12px; border-radius: 10px; font: 500 14px/1 var(--font-text); color: var(--nav-ink); }
+.student .nav:hover { background: var(--chip); color: var(--ink); }
 .student .navActive, .student .navActive:hover { background: var(--nav-sel); color: var(--nav-sel-ink); font-weight: 500; }
+.stFoot { display: flex; padding: 14px 12px 4px; border-top: 1px solid var(--hair); margin-top: 8px; }
+.stFoot .brandmark { height: 18px; }
+.stFootMark { display: none; height: 22px; width: auto; }
+:global([data-theme='dark']) .stFootMark { filter: brightness(1.9); }
 
 /* Desktop icon rail (68px admin, 70px student): labels hidden, the menu button alone at the top. */
 @media (min-width: 861px) {
@@ -99,6 +97,9 @@
   .mini .brandRow, .mini .stHead { flex-direction: column; justify-content: center; }
   .mini .stWho { flex: none; }
   .mini .brand, .mini .label, .mini .navGroup, .mini .who { display: none; }
+  .student.mini .stFoot { justify-content: center; padding: 14px 0 4px; }
+  .student.mini .stFootFull { display: none; }
+  .student.mini .stFootMark { display: block; }
   .mini .nav { justify-content: center; }
   .mini .acct { padding: 8px 0; }
 }
@@ -118,8 +119,7 @@
   .top { display: flex; align-items: center; padding: 16px 16px 0; }
   .content { padding: 8px 16px 96px; }
   .student .sidebar { width: 250px; }
-  .stTop { padding: 16px 16px 0; min-height: 0; margin-bottom: 14px; }
-  .stMain .content { padding: 0 16px 90px; }
+  .stPage { padding: 22px 16px 90px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

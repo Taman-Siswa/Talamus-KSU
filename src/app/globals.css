@@ -97,20 +97,51 @@
   color-scheme: dark; /* native controls (date picker, select menu, scrollbars) follow the theme */
 }
 
-/* Schools the admin adds have no identity color of their own: they fall back to the accent blue. */
+/* Fallback school colors; a school gets its own through data-sc (see lib/murid.ts sc()). */
 :root { --s-bar: var(--link); --s-tint: var(--nav-sel); --s-text: var(--nav-sel-ink); }
 
-/* School identity colors: put data-school="<id>" on any element to get --s-bar / --s-tint / --s-text.
-   Deliberately no red, yellow or green: those carry status meaning (gagal, peringatan, berhasil). */
-[data-school='mht'] { --s-bar: #1F8A8A; --s-tint: #DDF3F2; --s-text: #0E5257; }
-[data-school='pradita'] { --s-bar: #2E7CB8; --s-tint: #EAF4FB; --s-text: #164D74; }
-[data-school='ktb'] { --s-bar: #5B6B7F; --s-tint: #E8ECF1; --s-text: #2F3A48; }
-[data-school='tn'] { --s-bar: #B03A82; --s-tint: #F9E1EE; --s-text: #7A1F57; }
+/* ---------- Student skin ("Murid v3", Design system/murid-v3) ----------
+   TamanSchool green instead of the admin's blue, on the student pages and on the admin's preview of them.
+   Applied by Shell as data-skin="murid" on <html>, or by a wrapper with class "skin-murid". */
+:root[data-skin='murid'], .skin-murid {
+  --bg: #F7F7F5; --side: #FFFFFF; --card: #FFFFFF; --card-hover: #FAFAF8;
+  --hair: #ECECEA; --hair-soft: #F1F1EF; --hair-strong: #D8D4CE;
+  --ink: #333333; --sub: #797878; --faint: #ACAAAA; --chip: #F1F1EF; --track: #E2E2DF;
+  --accent: #2D6327; --link: #2D6327; --link-hover: #41933B;
+  --nav-ink: #797878; --nav-wash: #F1F1EF; --nav-sel: #EEF7EC; --nav-sel-ink: #2D6327;
+  --brand-bg: #E0F2DE; --brand-ink: #2D6327; --cta-bg: #2D6327; --cta-ink: #FFFFFF; --cta-hover: #234F1F;
+  --ok-bg: #E0F2DE; --ok-ink: #2D6327; --warn-bg: #FADDDB; --warn-ink: #791811; --amb-bg: #FFF5D6; --amb-ink: #664D00;
+  --blue-bg: #EAF4FB; --blue-ink: #164D74; --danger: #B3261E;
+  --shadow-1: 0px 4px 6px -2px rgba(0, 0, 0, 0.08);
+  --focus-ring: 0 0 0 3px rgba(45, 99, 39, 0.14);
+  --ui-text: var(--font-text); --ui-display: var(--font-display);
+}
+:root[data-theme='dark'][data-skin='murid'], :root[data-theme='dark'] .skin-murid {
+  --bg: #141613; --side: #1D201B; --card: #1D201B; --card-hover: #242822;
+  --hair: #2F332C; --hair-soft: #262A24; --hair-strong: #454A41;
+  --ink: #EDEEE8; --sub: #A5A89E; --faint: #7E8277; --chip: #282C25; --track: #30352D;
+  --accent: #8BCE85; --link: #8BCE85; --link-hover: #A9DCA4;
+  --nav-ink: #A5A89E; --nav-wash: #282C25; --nav-sel: #26361F; --nav-sel-ink: #8BCE85;
+  --brand-bg: #26361F; --brand-ink: #8BCE85; --cta-bg: #2D6327; --cta-ink: #FFFFFF; --cta-hover: #3A7A33;
+  --ok-bg: rgba(139, 206, 133, 0.14); --ok-ink: #8BCE85; --warn-bg: rgba(226, 114, 106, 0.14); --warn-ink: #F2A19A;
+  --amb-bg: rgba(228, 190, 85, 0.14); --amb-ink: #E4BE55;
+  --blue-bg: rgba(88, 166, 224, 0.16); --blue-ink: #8FC6EE; --danger: #F08A80;
+  --shadow-1: 0px 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --focus-ring: 0 0 0 3px rgba(139, 206, 133, 0.22);
+}
+:root { --hair-strong: #D8D4CE; --blue-bg: #EAF4FB; --blue-ink: #164D74; --danger: #B3261E; --cta-hover: #0F3A58; }
 
-[data-theme='dark'] [data-school='mht'] { --s-bar: #3BB5B5; --s-tint: rgba(59, 181, 181, 0.16); --s-text: #7FDADA; }
-[data-theme='dark'] [data-school='pradita'] { --s-bar: #58A6E0; --s-tint: rgba(88, 166, 224, 0.16); --s-text: #8FC6EE; }
-[data-theme='dark'] [data-school='ktb'] { --s-bar: #8A9BB0; --s-tint: rgba(138, 155, 176, 0.18); --s-text: #B9C6D6; }
-[data-theme='dark'] [data-school='tn'] { --s-bar: #E06AA8; --s-tint: rgba(224, 106, 168, 0.16); --s-text: #F2A6CC; }
+/* Identity colors for the student pages: data-sc="<color>" gives --s-bar / --s-tint / --s-text. */
+[data-sc='merah'] { --s-bar: #B4483F; --s-tint: #FADDDB; --s-text: #791811; }
+[data-sc='kuning'] { --s-bar: #A8871E; --s-tint: #FFF5D6; --s-text: #664D00; }
+[data-sc='biru'] { --s-bar: #2E7CB8; --s-tint: #EAF4FB; --s-text: #164D74; }
+[data-sc='hijau'] { --s-bar: #41933B; --s-tint: #E0F2DE; --s-text: #2D6327; }
+[data-sc='ungu'] { --s-bar: #6A4BAE; --s-tint: #EEE8F7; --s-text: #4A2E80; }
+[data-theme='dark'] [data-sc='merah'] { --s-bar: #E2726A; --s-tint: rgba(226, 114, 106, 0.16); --s-text: #F2A19A; }
+[data-theme='dark'] [data-sc='kuning'] { --s-bar: #D9AE3E; --s-tint: rgba(217, 174, 62, 0.16); --s-text: #EFCB6A; }
+[data-theme='dark'] [data-sc='biru'] { --s-bar: #58A6E0; --s-tint: rgba(88, 166, 224, 0.16); --s-text: #8FC6EE; }
+[data-theme='dark'] [data-sc='hijau'] { --s-bar: #51B848; --s-tint: rgba(81, 184, 72, 0.18); --s-text: #8FE28A; }
+[data-theme='dark'] [data-sc='ungu'] { --s-bar: #9B7FD4; --s-tint: rgba(155, 127, 212, 0.18); --s-text: #C3AEE8; }
 
 /* Avatar colors, picked on Profil: put data-av="<color>" on an avatar to get --av-bg / --av-ink. Blue is the default. */
 :root, [data-av='blue'] { --av-bg: var(--brand-bg); --av-ink: var(--brand-ink); }

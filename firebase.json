@@ -14,6 +14,10 @@
         "destination": "/katalog/_.html"
       },
       {
+        "source": "/checklist/**",
+        "destination": "/checklist/_.html"
+      },
+      {
         "source": "/admin/sekolah/**",
         "destination": "/admin/sekolah/_.html"
       }
