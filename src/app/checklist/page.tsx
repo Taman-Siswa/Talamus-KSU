@@ -9,7 +9,7 @@ import ui from '@/components/murid/murid.module.css';
 import { storySummary } from '@/components/murid/fit';
 import { dlLabel } from '@/lib/dates';
 import { nextPending, progressOf, sc } from '@/lib/murid';
-import { useSchools } from '@/lib/schools';
+import { checklistOf, useSchools } from '@/lib/schools';
 import { useStore } from '@/lib/store';
 
 /** Checklist home: one card per saved school; a card opens that school's checklist. */
@@ -49,7 +49,7 @@ export default function ChecklistPage() {
               </div>
               <div className={css.bar}><div className={css.barFill} style={{ width: pct + '%', background: pct === 100 ? '#2D6327' : undefined }} /></div>
               <div className={css.next}>
-                {pend ? `Berikutnya: ${clip(pend.l.split(' — ')[0])} · ${dlLabel(pend.dl, pend.est)}` : S.checklist.length ? 'Semua item siap' : 'Checklist belum diisi admin'}
+                {pend ? `Berikutnya: ${clip(pend.l.split(' — ')[0])} · ${dlLabel(pend.dl, pend.est)}` : checklistOf(S).length ? 'Semua item siap' : 'Checklist belum diisi admin'}
               </div>
               {story.count > 0 && (
                 <div className={css.story} role="button" tabIndex={0} title="Buka Ceritaku"

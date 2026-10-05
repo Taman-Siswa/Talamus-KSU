@@ -100,7 +100,7 @@ export default function ForumThreads({ schools, filter, preview = false }: { sch
                   <div className={css.q}>{t.q}</div>
                   <div className={css.metaRow}>
                     <span className={n ? css.stOk : css.stNone}>{n ? `${n} jawaban` : 'Belum ada jawaban'}</span>
-                    <span className={css.by}>· Ditanya oleh <strong>{t.by}</strong>{t.when ? ' · ' + t.when : ''}</span>
+                    <span className={css.by}>{t.by ? <>· Ditanya oleh <strong>{t.by}</strong>{t.when ? ' · ' + t.when : ''}</> : '· Pertanyaan umum dari sekolah'}</span>
                   </div>
                 </div>
                 <button type="button" className={[css.vote, t.voted ? css.voteOn : ''].join(' ')} aria-pressed={t.voted} disabled={preview}
@@ -123,12 +123,11 @@ export default function ForumThreads({ schools, filter, preview = false }: { sch
                       <div className={css.ansMain}>
                         {a.top && <div className={css.topTag}><Icon name="star" size={13} fill />JAWABAN TERATAS</div>}
                         <div className={css.who}>
-                          <span className={[css.ansAvatar, a.role !== 'self' ? css.ansAvatarTeam : ''].join(' ')}>{a.role === 'admin' ? 'TS' : a.name.replace(/^Kak /, '').slice(0, 2).toUpperCase()}</span>
+                          <span className={[css.ansAvatar, a.role !== 'self' ? css.ansAvatarTeam : ''].join(' ')}>{a.role === 'admin' ? 'TS' : initials(a.name)}</span>
                           <span className={css.ansName}>{a.name}</span>
                           <span className={[css.role, a.role === 'admin' ? css.roleAdmin : a.role === 'self' ? css.roleMurid : ''].join(' ')}>{ROLE_LABEL[a.role]}</span>
                           {a.when && <span className={css.when}>· {a.when}</span>}
                         </div>
-                        {a.bio && <div className={css.bio}>{a.bio}</div>}
                         <div className={css.ansText}>{a.text}</div>
                       </div>
                     </div>

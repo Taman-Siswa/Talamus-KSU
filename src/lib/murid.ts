@@ -1,6 +1,6 @@
 import { SCHOOL_COLORS, type School, type SchoolColor } from '@/data/types';
 import { MO, P, fmt, fmtR } from './dates';
-import { keyDatesOf } from './schools';
+import { checklistOf, keyDatesOf } from './schools';
 
 /* Pure helpers for the student pages ("Murid v3"). Nothing here touches the stores. */
 
@@ -39,14 +39,21 @@ export const statusLabel = (s: School) => {
 };
 
 export const cardSub = (s: School) => {
-  const t = (s.sub || s.tag).trim();
+  const t = s.tag.trim();
   return t && !/[.!?]$/.test(t) ? t + '.' : t;
 };
 
 export const locationLabel = (s: School) => s.location || [s.info.city, s.info.province].filter(Boolean).join(', ');
 
-/** The short place shown on the Katalog card chip. */
-export const placeChip = (s: School) => s.info.city || s.info.province;
+/** The city on the Katalog card chip, without "Kabupaten"/"Kota": "Kabupaten Bogor" → "Bogor". */
+export const placeChip = (s: School) => (s.info.city || '').replace(/^(kabupaten|kab\.|kota)\s+/i, '').trim() || s.info.province;
+
+/** The Biaya chip, same words as the Biaya filter; empty while the form's Biaya chips are not picked. */
+export const costChip = (s: School) => (isFree(s) ? 'Gratis' : s.info.funding.length ? 'Berbayar' : '');
+
+/** Value of the Lokasi filter that lists schools with more than one campus. */
+export const MULTI = 'Multi-kampus';
+export const isMulti = (s: School) => (s.info.campusCount ?? 0) > 1;
 
 /** "Pendaftaran: 9–23 Sep 2026" — from the registration stage, else the first stage. */
 export const daftarLabel = (s: School): string => {
@@ -60,38 +67,41 @@ export const daftarLabel = (s: School): string => {
   return '±' + m(A, A.getFullYear() !== B.getFullYear()) + '–' + m(B, true);
 };
 
+/** Sorotan under the school name; older records only have one-line "facts". */
 export const highlightsOf = (s: School) =>
-  s.highlights?.length ? s.highlights : s.facts.slice(0, 3).map(t => ({ icon: 'spark' as const, t, d: '' }));
+  (s.highlights ?? (s.facts ?? []).map(t => ({ icon: 'spark' as const, t, d: '' }))).filter(h => h.t.trim());
 
-/** Profile grid on the Tentang tab: the admin's rows, else what the school's info already says. */
+/** Fact table on the Tentang tab: the admin's rows that have a value. Older records build it from their info. */
 export function profileRows(s: School): { k: string; v: string }[] {
-  if (s.profile?.length) return s.profile;
+  if (s.profile) return s.profile.filter(r => r.k.trim() && r.v.trim());
   const i = s.info;
   return [
     { k: 'STATUS', v: i.kind },
-    { k: 'BERDIRI', v: i.founded },
-    { k: 'LOKASI', v: [i.city, i.province].filter(Boolean).join(', ') },
+    { k: 'BERDIRI', v: i.founded || '' },
+    { k: 'LOKASI', v: [i.city, i.province].filter(Boolean).join(', ') + ((i.campusCount ?? 0) > 1 ? ` · ${i.campusCount} kampus` : '') },
     { k: 'ALAMAT', v: i.address || '' },
     { k: 'SISTEM', v: i.boarding },
-    { k: 'KUOTA', v: i.quotas?.length ? i.quotas.map(q => `${q.year}: ${q.seats}`).join(' · ') : i.quota },
+    { k: 'KUOTA', v: i.quotas?.length ? i.quotas.map(q => `${q.year}: ${q.seats}`).join(' · ') : i.quota || '' },
     { k: 'SISTEM PENERIMAAN', v: i.admissionSystem || '' },
+    { k: 'TAHUN AJARAN', v: i.admissionYear ? i.admissionYear.replace('-', '/') : '' },
     { k: 'KONTAK', v: [i.phone, i.email, i.website, i.contact].filter(Boolean).join(' · ') },
   ].filter(r => r.v);
 }
 
 export const costText = (s: School) =>
-  s.cost?.long || (s.info.funding.length ? 'Pembiayaan: ' + s.info.funding.join(' · ') + '.' : '');
+  s.cost?.long || (s.info.funding.length ? 'Biaya: ' + s.info.funding.join(' · ') + '.' : '');
 
 /** Checklist progress of one school. */
 export function progressOf(s: School, checks: Record<string, boolean>) {
-  const total = s.checklist.length;
-  const done = s.checklist.filter(c => checks[s.id + '.' + c.id]).length;
+  const list = checklistOf(s);
+  const total = list.length;
+  const done = list.filter(c => checks[s.id + '.' + c.id]).length;
   return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
 /** The unfinished item with the nearest deadline. */
 export function nextPending(s: School, checks: Record<string, boolean>) {
-  return s.checklist
+  return checklistOf(s)
     .filter(c => c.dl && !checks[s.id + '.' + c.id])
     .sort((a, b) => P(a.dl).valueOf() - P(b.dl).valueOf())[0];
 }
@@ -172,4 +182,5 @@ export function deadlineNotifs(schools: School[], saved: Partial<Record<string, 
 /** Stars for a 1–5 rating. */
 export const stars = (n: number) => '★'.repeat(Math.max(0, Math.min(5, n))) + '☆'.repeat(5 - Math.max(0, Math.min(5, n)));
 
-export const agoLabel = (months: number) => (months === 0 ? '1 minggu lalu' : months + ' bulan lalu');
+/** "Agu 2026" from "2026-08". */
+export const monthLabel = (ym?: string) => (ym && /^\d{4}-\d{2}$/.test(ym) ? MO[Number(ym.slice(5)) - 1] + ' ' + ym.slice(0, 4) : '');

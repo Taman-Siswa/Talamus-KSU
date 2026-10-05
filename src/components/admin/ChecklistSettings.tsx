@@ -13,16 +13,18 @@ const nextKey = (fields: { k: string }[]) => {
 };
 
 /** Metadata shared by document preparation and additional tasks; kept out of the spreadsheet form. */
-export default function ChecklistSettings({ item, onChange }: {
+export default function ChecklistSettings({ item, onChange, dlRequired }: {
   item: ChecklistItem;
   onChange: (patch: Partial<ChecklistItem>) => void;
+  /** every berkas has its own deadline; a task may go without one */
+  dlRequired?: boolean;
 }) {
   const fields = item.f || [];
   const setFields = (f: typeof fields) => onChange({ f: f.length ? f : undefined });
   return <>
     <div className={css.grid2}>
       <Field label="Catatan"><TextInput value={item.note || ''} onChange={note => onChange({ note })} /></Field>
-      <Field label="Tanggal tenggat" note="opsional"><TextInput type="date" value={item.dl} onChange={dl => onChange({ dl })} /></Field>
+      <Field label="Tenggat" required={dlRequired} note={dlRequired ? undefined : 'opsional'}><TextInput type="date" value={item.dl} onChange={dl => onChange({ dl })} /></Field>
     </div>
     <div className={css.rowTools}>
       <Switch checked={!!item.est} label="Tanggal masih perkiraan" onChange={est => onChange({ est })} />

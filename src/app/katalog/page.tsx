@@ -3,7 +3,7 @@
 import KatalogHero from '@/components/murid/KatalogHero';
 import SchoolCard from '@/components/SchoolCard';
 import { useKatalogFilter } from '@/lib/katalog-filter';
-import { isBoarding, isFree } from '@/lib/murid';
+import { isBoarding, isFree, MULTI, isMulti } from '@/lib/murid';
 import { useSchools } from '@/lib/schools';
 import css from '@/components/murid/katalog.module.css';
 import ui from '@/components/murid/murid.module.css';
@@ -13,7 +13,7 @@ export default function KatalogPage() {
   const { lok, asr, biaya, q } = useKatalogFilter();
   const query = q.trim().toLowerCase();
   const shown = schools.filter(s =>
-    (lok === 'all' || s.info.province === lok)
+    (lok === 'all' || s.info.province === lok || (lok === MULTI && isMulti(s)))
     && (asr === 'all' || (asr === 'ya') === isBoarding(s))
     && (biaya === 'all' || (biaya === 'gratis') === isFree(s))
     && (!query || `${s.name} ${s.short} ${s.mono}`.toLowerCase().includes(query)));

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { School } from '@/data/types';
 import { P, dlLabel, startOfToday } from '@/lib/dates';
 import { daftarLabel, progressOf, statusLabel } from '@/lib/murid';
+import { checklistOf } from '@/lib/schools';
 import { isWebUrl } from '@/lib/school-form';
 import { useStore } from '@/lib/store';
 import Icon from './Icon';
@@ -15,7 +16,8 @@ export default function ChecklistCard({ school: S, preview = false }: { school: 
   const forms = useStore(s => s.forms);
   const { toggleCheck, setForm } = useStore.getState();
   const today = startOfToday();
-  const { total, done, pct } = preview ? { total: S.checklist.length, done: 0, pct: 0 } : progressOf(S, checks);
+  const list = checklistOf(S);
+  const { total, done, pct } = preview ? { total: list.length, done: 0, pct: 0 } : progressOf(S, checks);
   const resmi = S.status === 'resmi';
 
   return (
@@ -32,9 +34,9 @@ export default function ChecklistCard({ school: S, preview = false }: { school: 
         <div className={css.progBar}><div className={css.progFill} style={{ width: pct + '%' }} /></div>
         <span className={css.progLabel}>{done} dari {total} selesai</span>
       </div>
-      {S.checklist.length === 0 && <div className={css.none}>Belum ada tugas di checklist sekolah ini.</div>}
+      {list.length === 0 && <div className={css.none}>Belum ada tugas di checklist sekolah ini.</div>}
       <div>
-        {S.checklist.map(c => {
+        {list.map(c => {
           const key = S.id + '.' + c.id;
           const isDone = !preview && !!checks[key];
           const overdue = !!c.dl && P(c.dl) < today && !isDone;

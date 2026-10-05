@@ -30,17 +30,19 @@ export interface ChecklistItem {
 /** School profile; spreadsheet additions are optional so existing saved records still load. */
 export interface SchoolInfo {
   kind: '' | 'Negeri' | 'Swasta';
-  founded: string;
+  /** older records only; the form writes these into the Tentang table (`profile`) instead */
+  founded?: string;
   province: string;
   curriculum: string[];
   /** Notion's "Asrama/Tidak" */
   boarding: string;
   /** Notion's "Pembiayaan": Beasiswa and/or Berbayar */
   funding: string[];
-  /** Notion's "Kuota/angkatan" */
-  quota: string;
-  contact: string;
+  quota?: string;
+  contact?: string;
   city?: string;
+  /** number of campuses; above 1 the Katalog card says "6 kampus" and the school also shows under Lokasi: Multi-kampus */
+  campusCount?: number;
   address?: string;
   phone?: string;
   email?: string;
@@ -57,11 +59,19 @@ export type ReqCategory = 'Akademik' | 'Kesehatan' | 'Administrasi' | 'Domisili'
  * until the admin picks one. `det` holds the optional detail fields some categories have (tes akademik, pemeriksaan).
  */
 export interface Requirement {
+  /** title; the form derives it from the first line of `v` */
   k: string;
   v: string;
   group?: 'utama' | 'akademis' | 'fisik';
+  /** older records only */
   cat?: ReqCategory | '';
+  /** older records only: detail fields, now folded into `v` */
   det?: Record<string, string>;
+  /** 'nilai' = the row behind `School.calc`, 'usia' = the row behind `eligibility.dob`; both texts follow their fields */
+  kind?: 'nilai' | 'usia';
+  /** the student can answer this requirement yes/no in Cek syarat; `id` keys the answer */
+  check?: boolean;
+  id?: string;
 }
 
 /** The five identity colors of the student design; an admin may pick one, otherwise it follows the school id. */
@@ -79,9 +89,8 @@ export interface Review {
   /** paragraphs separated by a blank line */
   text: string;
   rating: number;
-  /** months ago; 0 = this week */
-  ago: number;
-  likes: number;
+  /** month written, "2026-08" */
+  date?: string;
 }
 
 /**
@@ -91,13 +100,11 @@ export interface Review {
  */
 export interface SchoolContent {
   color?: SchoolColor;
-  /** one line under the name on the Katalog card; falls back to `tag` */
+  /** older records only: the card line now is `tag` */
   sub?: string;
   /** line under the title on the detail page; falls back to city + province */
   location?: string;
-  /** how many students liked the school so far; the Katalog card shows it plus the viewer's own like */
-  likes?: number;
-  /** reserved for school photos; until assets exist every photo slot shows a placeholder tile */
+  /** up to five photos: references to what the admin uploaded ("ksu-photo:<id>", see lib/photos.ts) or web links; empty = placeholder tile */
   photos?: string[];
   highlights?: { icon: IconKey; t: string; d: string }[];
   about?: string;
@@ -109,7 +116,7 @@ export interface SchoolContent {
   achievements?: { t: string; yr: string }[];
   achievementsUpdated?: string;
   reviews?: Review[];
-  /** `free` drives the "Gratis" tag and the Biaya filter; `long` is the text in the Biaya panel */
+  /** `long` is the text in the Biaya panel; `free` is from older records (Gratis now follows Pembiayaan) */
   cost?: { long?: string; free?: boolean };
   /** the "Cek syarat" questions beyond report-card grades */
   eligibility?: { dob?: { max: number; at: string; q: string }; items: { id: string; q: string }[] };
@@ -128,7 +135,8 @@ export interface School extends SchoolContent {
   status: 'resmi' | 'est';
   /** info-freshness note */
   banner: string;
-  facts: string[];
+  /** older records only: one-line highlights, now `highlights` */
+  facts?: string[];
   reqs: Requirement[];
   calc: Calc | null;
   calcNote: string;

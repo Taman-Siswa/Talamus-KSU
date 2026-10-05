@@ -67,4 +67,7 @@
 @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } .slideText { width: 92%; } }
 .likeWrap { display: inline-flex; align-items: center; gap: 8px; }
-.likes { font: 500 13px/1 var(--font-text); color: var(--sub); }
+
+.slidePhoto { position: absolute; top: 14px; right: 14px; bottom: 14px; width: calc(45% - 14px); border-radius: 16px; background: var(--chip) center / cover no-repeat; }
+.slideWithPhoto .slideText { width: 55%; }
+@media (max-width: 860px) { .slidePhoto { display: none; } .slideWithPhoto .slideText { width: 92%; } }

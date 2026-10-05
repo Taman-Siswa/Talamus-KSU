@@ -3,8 +3,8 @@
 import { useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import type { Requirement, School } from '@/data/types';
-import { P, fmt } from '@/lib/dates';
-import { agoLabel, costText, daftarLabel, highlightsOf, locationLabel, profileRows, sc, stars } from '@/lib/murid';
+import { P, dlLabel, fmt } from '@/lib/dates';
+import { costText, daftarLabel, highlightsOf, locationLabel, monthLabel, profileRows, sc, stars } from '@/lib/murid';
 import { REQUIREMENT_GROUPS, isWebUrl, requirementGroup } from '@/lib/school-form';
 import { useStore } from '@/lib/store';
 import Icon from './Icon';
@@ -69,17 +69,22 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
   const resmi = S.status === 'resmi';
   const hls = highlightsOf(S);
   const about = S.about || S.tag;
-  const profile = profileRows(S).filter(r => !['KURIKULUM', 'PEMINATAN'].includes(r.k.toUpperCase()));
+  const profile = profileRows(S);
   const kurs = S.curriculumCards?.length ? S.curriculumCards : S.info.curriculum.map(t => ({ t, d: '' }));
   const alumni = S.alumni ?? [];
   const achievements = (S.achievements ?? []).slice().sort((a, b) => yearOf(b) - yearOf(a));
-  const reviews = (S.reviews ?? []).map((r, i) => ({ r, i })).sort((a, b) => (rvSort === 'new' ? a.r.ago - b.r.ago : b.r.likes - a.r.likes));
+  // Fasilitas, Alumni & prestasi and Ulasan are optional in the admin form: a tab without data is left out.
+  const has = { tentang: true, fasilitas: !!S.facilities?.length, alumni: !!(S.alumni?.length || S.achievements?.length), ulasan: !!S.reviews?.length };
+  const shown = TABS.filter(([k]) => has[k]);
+  const reviews = (S.reviews ?? []).map((r, i) => ({ r, i }))
+    .sort((a, b) => (rvSort === 'new' ? (b.r.date || '').localeCompare(a.r.date || '') : b.r.rating - a.r.rating));
   const someEst = S.phases.some(p => p.est), allEst = S.phases.length > 0 && S.phases.every(p => p.est);
   const tlBadge = !someEst ? { text: 'Data terbaru', ok: true } : { text: allEst ? 'Pakai data tahun lalu' : 'Sebagian estimasi', ok: false };
   const statusLabel = resmi ? 'Info resmi sudah rilis' : 'Info belum rilis — pakai data tahun lalu';
   const bannerPts = (S.banner || '').split(/\.\s+/).map(x => x.trim()).filter(Boolean).map(x => (/[.!?]$/.test(x) ? x : x + '.'));
   const cost = costText(S);
   const toggle = (k: string) => setAcc(a => ({ ...a, [k]: !a[k] }));
+  const docs = S.checklist.filter(c => c.document);
   const grouped = REQUIREMENT_GROUPS.map(g => ({ g, rows: S.reqs.filter((r: Requirement) => requirementGroup(r) === g.value) })).filter(x => x.rows.length);
 
   return (
@@ -115,11 +120,12 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
             </>
           )}
 
-          <div className={css.tabs} role="tablist">
-            {TABS.map(([k, label]) => (
+          {shown.length > 1 && <div className={css.tabs} role="tablist">
+            {shown.map(([k, label]) => (
               <button key={k} type="button" role="tab" aria-selected={tab === k} className={[css.tab, tab === k ? css.tabOn : ''].join(' ')} onClick={() => goTab(k)}>{label}</button>
             ))}
-          </div>
+          </div>}
+          {shown.length <= 1 && <div className={css.tabsGap} />}
 
           <section id={secId('tentang')} className={css.sec}>
             <h3 className={css.secTitle}>Tentang sekolah</h3>
@@ -144,13 +150,16 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
             )}
           </section>
 
+          {has.fasilitas && (
           <section id={secId('fasilitas')} className={css.sec}>
             <h3 className={css.secTitle}>Fasilitas sekolah</h3>
             {S.facilities?.length
               ? <div className={css.fasil}>{S.facilities.map(f => <div key={f.t} className={css.fas}><Icon name={f.icon} size={24} stroke={1.5} />{f.t}</div>)}</div>
               : <p className={css.empty}>Belum ada data fasilitas.</p>}
           </section>
+          )}
 
+          {has.alumni && (
           <section id={secId('alumni')} className={css.sec}>
             <h3 className={css.secTitle}>Alumni &amp; prestasi</h3>
             {!alumni.length && !achievements.length && <p className={css.empty}>Belum ada data alumni dan prestasi.</p>}
@@ -197,13 +206,15 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
               </>
             )}
           </section>
+          )}
 
+          {has.ulasan && (
           <section id={secId('ulasan')} className={css.sec}>
             <div className={css.rvHead}>
               <div className={css.rvTitle}>Ulasan alumni</div>
               {reviews.length > 1 && (
                 <div className={css.rvSorts}>
-                  <button type="button" className={[css.rvSort, rvSort === 'pop' ? css.rvSortOn : ''].join(' ')} onClick={() => setRvSort('pop')}>POPULER</button>
+                  <button type="button" className={[css.rvSort, rvSort === 'pop' ? css.rvSortOn : ''].join(' ')} onClick={() => setRvSort('pop')}>TERBAIK</button>
                   <button type="button" className={[css.rvSort, rvSort === 'new' ? css.rvSortOn : ''].join(' ')} onClick={() => setRvSort('new')}>TERBARU</button>
                 </div>
               )}
@@ -216,14 +227,14 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
                 <article key={key} className={css.rv}>
                   <span className={[css.rvAv, css['av' + (i % 4)]].join(' ')}>{initialsOf(r.name)}</span>
                   <div style={{ minWidth: 0 }}>
-                    <div className={css.rvBy}><span>Ulasan oleh <strong>{r.name}</strong></span><span className={css.rvStars}>{stars(r.rating)}</span></div>
-                    <div className={css.rvMeta}>{r.role} · {agoLabel(r.ago)}</div>
-                    <div className={css.rvName}>{r.title}</div>
+                    <div className={css.rvBy}><span>Ulasan oleh <strong>{r.name}</strong></span>{r.rating > 0 && <span className={css.rvStars}>{stars(r.rating)}</span>}</div>
+                    <div className={css.rvMeta}>{[r.role, monthLabel(r.date)].filter(Boolean).join(' · ')}</div>
+                    {r.title && <div className={css.rvName}>{r.title}</div>}
                     {(open ? paras : paras.slice(0, 1)).map((p, k) => <p key={k} className={css.rvP}>{p}</p>)}
                     <div className={css.rvAct}>
                       {paras.length > 1 && <button type="button" className={css.rvMore} onClick={() => setRvOpen(o => ({ ...o, [key]: !open }))}>{open ? 'Tutup' : 'Baca selengkapnya'}</button>}
                       <button type="button" className={[css.rvLike, liked ? css.rvLikeOn : ''].join(' ')} disabled={preview} aria-pressed={liked} onClick={() => toggleRvLike(key)}>
-                        <Icon name="heart" size={15} stroke={1.8} fill={liked} />{r.likes + (liked ? 1 : 0)} suka
+                        <Icon name="heart" size={15} stroke={1.8} fill={liked} />{liked ? 'Disukai' : 'Suka'}
                       </button>
                     </div>
                   </div>
@@ -231,6 +242,7 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
               );
             })}
           </section>
+          )}
         </div>
 
         <aside className={css.aside}>
@@ -255,13 +267,36 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
                 {cost ? <p className={css.accText}>{cost}</p> : <p className={css.empty}>Belum ada keterangan biaya.</p>}
               </Accordion>
               <Accordion title="Syarat" open={!!acc.syarat} onToggle={() => toggle('syarat')}>
-                {grouped.length === 0 && <p className={css.empty}>Belum ada syarat.</p>}
+                {grouped.length === 0 && docs.length === 0 && <p className={css.empty}>Belum ada syarat.</p>}
                 {grouped.map(({ g, rows }) => (
                   <div key={g.value}>
-                    {grouped.length > 1 && <div className={css.grpLabel}>{g.label}</div>}
-                    {rows.map((r, i) => <div key={i} className={css.req}><div className={css.reqK}>{r.k}</div><div className={css.reqV}>{r.v}</div></div>)}
+                    {(grouped.length > 1 || docs.length > 0) && <div className={css.grpLabel}>{g.label}</div>}
+                    {rows.map((r, i) => {
+                      // A requirement typed as one sentence has a name that is just its own beginning: show the sentence once.
+                      const named = !!r.k.trim() && !r.v.trim().startsWith(r.k.trim());
+                      return (
+                        <div key={i} className={css.req}>
+                          {named && <div className={css.reqK}>{r.k}</div>}
+                          <div className={named ? css.reqV : css.reqK}>{r.v}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ))}
+                {docs.length > 0 && (
+                  <div>
+                    <div className={css.grpLabel}>Berkas yang disiapkan</div>
+                    {docs.map(c => (
+                      <div key={c.id} className={css.req}>
+                        <div className={css.reqK}>{c.l}</div>
+                        <div className={css.reqV}>
+                          {[c.document!.required ? 'Wajib' : 'Opsional', ...c.document!.rules.map(r => `${r.format} maks. ${r.maxMB} MB`), c.dl ? 'tenggat ' + dlLabel(c.dl, c.est) : ''].filter(Boolean).join(' · ')}
+                          {isWebUrl(c.document!.template) && <> · <a href={c.document!.template} target="_blank" rel="noopener noreferrer">Unduh template</a></>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Accordion>
               <Accordion title="Timeline Pendaftaran" badge={S.phases.length ? tlBadge : undefined} open={!!acc.alur} onToggle={() => toggle('alur')}>
                 {S.phases.length === 0 && <p className={css.empty}>Jadwal belum diumumkan.</p>}

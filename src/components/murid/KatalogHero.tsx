@@ -5,15 +5,26 @@ import Link from 'next/link';
 import type { School } from '@/data/types';
 import { useIsMobile } from '@/lib/hooks';
 import { highlightsOf, sc } from '@/lib/murid';
+import { P, startOfToday } from '@/lib/dates';
+import { usePhotoUrl } from '@/lib/photos';
 import { useStore } from '@/lib/store';
 import Icon from '../Icon';
 import css from './katalog.module.css';
 
-const title = (s: School) => (s.status === 'resmi' ? `Pendaftaran ${s.short} sudah dibuka` : s.name);
+// "sudah dibuka" only while an officially announced registration stage is running.
+const isOpen = (s: School, today: Date) =>
+  s.status === 'resmi' && s.phases.some(p => p.t === 'daftar' && p.s && P(p.s) <= today && P(p.e || p.s) >= today);
+const title = (s: School, today: Date) => (isOpen(s, today) ? `Pendaftaran ${s.short} sudah dibuka` : s.name);
 const sub = (s: School) => {
   const h = highlightsOf(s)[0];
   return s.status === 'resmi' || !h?.d ? s.tag : `${h.t}. ${h.d}`;
 };
+
+/** The school's main photo on the right of its slide. */
+function SlidePhoto({ photo }: { photo: string }) {
+  const url = usePhotoUrl(photo);
+  return <div className={css.slidePhoto} role="img" aria-hidden style={url ? { backgroundImage: `url("${url}")` } : undefined} />;
+}
 
 /** The swipeable highlight strip at the top of the Katalog: schools with official info first, then the rest. */
 export default function KatalogHero({ schools }: { schools: School[] }) {
@@ -21,6 +32,7 @@ export default function KatalogHero({ schools }: { schools: School[] }) {
   const sel = useStore(s => s.sel);
   const toggleSel = useStore(s => s.toggleSel);
   const [idx, setIdx] = useState(0);
+  const today = startOfToday();
   const downX = useRef<number | null>(null);
   const lock = useRef(0);
   const acc = useRef(0);
@@ -52,12 +64,12 @@ export default function KatalogHero({ schools }: { schools: School[] }) {
           {list.map((s, k) => {
             const on = !!sel[s.id], cur = k === i;
             return (
-              <div key={s.id} {...sc(s)} className={css.slide} style={{ flex: `0 0 ${w}%`, cursor: cur ? 'default' : 'pointer' }}
+              <div key={s.id} {...sc(s)} className={[css.slide, s.photos?.[0] ? css.slideWithPhoto : ''].join(' ')} style={{ flex: `0 0 ${w}%`, cursor: cur ? 'default' : 'pointer' }}
                 onClick={() => { if (!cur) go(k); }}>
-                <span className={css.watermark}>{s.mono}</span>
+                {s.photos?.[0] ? <SlidePhoto photo={s.photos[0]} /> : <span className={css.watermark}>{s.mono}</span>}
                 <div className={css.slideText}>
                   <span className={css.slideEyebrow}>SMA UNGGULAN PALING DIINCAR</span>
-                  <h2 className={css.slideTitle}>{title(s)}</h2>
+                  <h2 className={css.slideTitle}>{title(s, today)}</h2>
                   <p className={css.slideSub}>{sub(s)}</p>
                   <div className={css.slideGap} />
                   <div className={css.slideActions}>

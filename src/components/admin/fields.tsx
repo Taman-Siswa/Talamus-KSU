@@ -34,7 +34,7 @@ export function Field({ label, note, required, group, className, children }: {
 
 /** Underlined text input. `strong` is the heavier style used for a school's name. */
 export function TextInput({ value, onChange, placeholder, type = 'text', maxLength, min, max, invalid, strong, medium, code, label, list }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; type?: 'text' | 'date' | 'url' | 'number';
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: 'text' | 'date' | 'month' | 'url' | 'number';
   maxLength?: number; min?: string; max?: string; invalid?: boolean; strong?: boolean;
   /** weight 500, for a row's main line (task title, question) */
   medium?: boolean;
@@ -155,7 +155,10 @@ export function AddButton({ onClick, children }: { onClick: () => void; children
   );
 }
 
-export function RowTools({ i, count, onMove, onRemove }: { i: number; count: number; onMove: (to: number) => void; onRemove: () => void }) {
+/** `removeLabel` turns the remove icon into a labelled button, for rows big enough that a bare × is easy to miss. */
+export function RowTools({ i, count, onMove, onRemove, removeLabel }: {
+  i: number; count: number; onMove: (to: number) => void; onRemove: () => void; removeLabel?: string;
+}) {
   return (
     <>
       <button type="button" className={css.rowBtn} onClick={() => onMove(i - 1)} disabled={i === 0} aria-label="Naikkan" title="Naikkan">
@@ -164,9 +167,15 @@ export function RowTools({ i, count, onMove, onRemove }: { i: number; count: num
       <button type="button" className={css.rowBtn} onClick={() => onMove(i + 1)} disabled={i === count - 1} aria-label="Turunkan" title="Turunkan">
         <Icon name="chevronDown" size={14} stroke={1.8} />
       </button>
-      <button type="button" className={cx(css.rowBtn, css.rowBtnDanger)} onClick={onRemove} aria-label="Hapus" title="Hapus">
-        <Icon name="x" size={14} stroke={1.8} />
-      </button>
+      {removeLabel ? (
+        <button type="button" className={css.removeBtn} onClick={onRemove}>
+          <Icon name="trash" size={14} stroke={1.8} />{removeLabel}
+        </button>
+      ) : (
+        <button type="button" className={cx(css.rowBtn, css.rowBtnDanger)} onClick={onRemove} aria-label="Hapus" title="Hapus">
+          <Icon name="x" size={14} stroke={1.8} />
+        </button>
+      )}
     </>
   );
 }
@@ -179,7 +188,7 @@ export const moveIn = <T,>(items: T[], i: number, to: number) => {
 };
 
 /** Repeating rows, each in a bordered card with its label and reorder/remove buttons on top. */
-export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLabel, rowBadge, empty }: {
+export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLabel, rowBadge, empty, removeLabel, extra }: {
   items: T[];
   onChange: (items: T[]) => void;
   /** a new, empty row */
@@ -190,6 +199,10 @@ export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLab
   /** optional pill before the row label */
   rowBadge?: (item: T) => ReactNode;
   empty?: string;
+  /** text for a labelled remove button, e.g. "Hapus ulasan" */
+  removeLabel?: string;
+  /** more add buttons next to the main one, e.g. a row that comes with its own fields */
+  extra?: ReactNode;
 }) {
   const replace = (i: number, item: T) => onChange(items.map((x, j) => (j === i ? item : x)));
   return (
@@ -201,12 +214,15 @@ export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLab
             {rowBadge ? rowBadge(item) : null}
             <span className={css.rowLabel}>{rowLabel(item, i)}</span>
             <RowTools i={i} count={items.length} onMove={to => onChange(moveIn(items, i, to))}
-              onRemove={() => onChange(items.filter((_, j) => j !== i))} />
+              onRemove={() => onChange(items.filter((_, j) => j !== i))} removeLabel={removeLabel} />
           </div>
           {render(item, patch => replace(i, { ...item, ...patch }), i)}
         </div>
       ))}
-      <AddButton onClick={() => onChange([...items, blank()])}>{addLabel}</AddButton>
+      <div className={css.addRow}>
+        <AddButton onClick={() => onChange([...items, blank()])}>{addLabel}</AddButton>
+        {extra}
+      </div>
     </>
   );
 }

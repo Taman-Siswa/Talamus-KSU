@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { startOfToday } from '@/lib/dates';
 import { useKatalogFilter } from '@/lib/katalog-filter';
-import { deadlineNotifs } from '@/lib/murid';
+import { deadlineNotifs, MULTI, isMulti } from '@/lib/murid';
 import { useSchools } from '@/lib/schools';
 import { useStore } from '@/lib/store';
 import Icon from './Icon';
@@ -23,6 +23,7 @@ function KatalogFilters({ onPick }: { onPick: () => void }) {
   const schools = useSchools();
   const f = useKatalogFilter();
   const provinces = [...new Set(schools.map(s => s.info.province).filter(Boolean))].sort();
+  if (schools.some(isMulti)) provinces.push(MULTI);
   const pick = (patch: Parameters<typeof f.set>[0]) => { f.set(patch); onPick(); };
   const pill = (on: boolean) => [css.pill, on ? css.pillOn : ''].join(' ');
   const select = (label: string, value: string, options: [string, string][], onChange: (v: string) => void) => (

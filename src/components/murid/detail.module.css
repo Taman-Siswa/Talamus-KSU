@@ -167,3 +167,6 @@
   .barK { flex-basis: 110px; }
   .tabs { top: 60px; }
 }
+
+/* Without other sections the tab bar is hidden; keep its space above Tentang. */
+.tabsGap { height: 30px; }

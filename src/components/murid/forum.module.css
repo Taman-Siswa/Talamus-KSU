@@ -78,7 +78,6 @@
 .roleMurid { background: var(--chip); color: var(--ink); }
 .roleAdmin { background: #2D6327; color: #FFFFFF; }
 .ansAvatarTeam { background: #2D6327; color: #FFFFFF; }
-.bio { font: 400 12.5px/1.4 var(--font-text); color: var(--sub); margin-top: 4px; }
 .when { font: 400 12px/1.3 var(--font-text); color: var(--faint); }
 .ansText { font: 400 15px/1.6 var(--font-text); color: var(--ink); margin-top: 8px; max-width: 72ch; text-wrap: pretty; white-space: pre-line; }
 .reply { display: flex; gap: 8px; align-items: center; margin-top: 14px; }

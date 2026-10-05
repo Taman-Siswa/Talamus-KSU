@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { SCHOOLS } from '@/data/schools';
-import type { PhaseType, ReqCategory, Requirement, School, SchoolId, SchoolInfo } from '@/data/types';
+import type { ChecklistItem, PhaseType, ReqCategory, Requirement, School, SchoolId, SchoolInfo } from '@/data/types';
 
 // School data the admin edits. Unlike student data this key is NOT per-account: one browser has
 // one set of school data, so an admin's edits are what students on that browser read.
@@ -41,13 +41,17 @@ export const bundledDefault = (id: SchoolId): School | null => {
 export const newSchoolId = () => 'sekolah-' + Math.random().toString(36).slice(2, 8);
 
 export const blankInfo = (): SchoolInfo => ({
-  kind: '', founded: '', province: '', curriculum: [], boarding: '', funding: [], quota: '', contact: '',
+  kind: '', province: '', curriculum: [], boarding: '', funding: [],
 });
 
-/** Empty school the editor starts from; every list is empty so students see nothing until it is filled in. */
+/**
+ * Empty school the editor starts from. Lists are empty so students see nothing until it is filled in; the fact
+ * table starts with the design's usual labels, and a row without a value stays hidden from students.
+ */
 export const blankSchool = (): School => ({
   id: '', mono: '', short: '', name: '', pill: '', info: blankInfo(), tag: '', status: 'est', banner: '',
-  facts: [], reqs: [], calc: null, calcNote: '', phases: [], checklist: [], docs: [], faq: [],
+  highlights: [], about: '', profile: ['BERDIRI', 'PENGELOLA', 'KAMPUS PUSAT', 'SISTEM', 'KUOTA', 'JALUR'].map(k => ({ k, v: '' })),
+  reqs: [], calc: null, calcNote: '', phases: [], checklist: [], docs: [], faq: [],
 });
 
 // Schools saved before `info` existed have none: fill it from the bundled record, else leave it blank.
@@ -78,6 +82,38 @@ export const keyDatesOf = (s: School): { d: string; l: string }[] =>
       return [{ d: p.s, l: label(p.l) }];
     })
     .sort((a, b) => a.d.localeCompare(b.d));
+
+/** Stages students take part in but do not act on: no checklist line for them. */
+const NO_TASK = /administrasi|pengumuman|sosialisasi/i;
+
+/**
+ * Checklist lines that come from the timeline, so the admin never types a stage twice: "Submit pendaftaran" at the
+ * registration close date and "Ikut <stage>" at the start of each test stage. The id follows the stage name, so a
+ * student's tick stays when stages are reordered.
+ */
+export function timelineTasks(s: School): ChecklistItem[] {
+  const seen: Record<string, number> = {};
+  return s.phases
+    .filter(p => p.s && p.l.trim() && (p.t === 'daftar' || (p.t === 'tes' && !NO_TASK.test(p.l))))
+    .map(p => {
+      const base = 'tl:' + p.l.trim().toLowerCase();
+      const n = (seen[base] = (seen[base] ?? 0) + 1);
+      return {
+        id: n > 1 ? base + '#' + n : base,
+        l: p.t === 'daftar' ? 'Submit pendaftaran sebelum ditutup' : 'Ikut ' + p.l.trim(),
+        dl: p.t === 'daftar' ? p.e || p.s : p.s,
+        est: p.est,
+        note: p.details?.trim() || undefined,
+      };
+    });
+}
+
+/** What the student's checklist shows: the admin's berkas and tasks plus the timeline's, soonest deadline first. */
+export const checklistOf = (s: School): ChecklistItem[] =>
+  [...s.checklist, ...timelineTasks(s)]
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => (a.c.dl || '9999').localeCompare(b.c.dl || '9999') || a.i - b.i)
+    .map(x => x.c);
 
 export const useSchoolsStore = create<SchoolsState>()(
   persist(
