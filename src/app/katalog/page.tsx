@@ -3,20 +3,23 @@
 import KatalogHero from '@/components/murid/KatalogHero';
 import SchoolCard from '@/components/SchoolCard';
 import { useKatalogFilter } from '@/lib/katalog-filter';
-import { isBoarding, isFree, MULTI, isMulti } from '@/lib/murid';
+import { startOfToday } from '@/lib/dates';
+import { daftarRank, isBoarding, isFree, MULTI, isMulti } from '@/lib/murid';
 import { useSchools } from '@/lib/schools';
 import css from '@/components/murid/katalog.module.css';
 import ui from '@/components/murid/murid.module.css';
 
 export default function KatalogPage() {
   const schools = useSchools();
-  const { lok, asr, biaya, q } = useKatalogFilter();
+  const { lok, asr, biaya, sort, q } = useKatalogFilter();
   const query = q.trim().toLowerCase();
   const shown = schools.filter(s =>
     (lok === 'all' || s.info.province === lok || (lok === MULTI && isMulti(s)))
     && (asr === 'all' || (asr === 'ya') === isBoarding(s))
     && (biaya === 'all' || (biaya === 'gratis') === isFree(s))
     && (!query || `${s.name} ${s.short} ${s.mono}`.toLowerCase().includes(query)));
+  if (sort === 'az') shown.sort((a, b) => a.name.localeCompare(b.name, 'id'));
+  else if (sort === 'daftar') { const today = startOfToday(); shown.sort((a, b) => daftarRank(a, today) - daftarRank(b, today)); }
 
   if (!schools.length) return <div className={ui.empty}>Belum ada sekolah di katalog. Sekolah ditambahkan oleh admin.</div>;
   return (

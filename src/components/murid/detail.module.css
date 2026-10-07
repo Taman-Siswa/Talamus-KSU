@@ -170,3 +170,25 @@
 
 /* Without other sections the tab bar is hidden; keep its space above Tentang. */
 .tabsGap { height: 30px; }
+
+/* Inline admin previews use the same content at the width of their pane. */
+.sectionPreview { padding: 0; max-width: none; container-type: inline-size; }
+.sectionPreview .cols { display: block; }
+.sectionPreview .main { min-width: 0; }
+.sectionPreview .gallery { display: grid; grid-template-columns: minmax(0, 1fr); }
+.sectionPreview .galMain > div { height: 220px; }
+.sectionPreview .galGrid { grid-template-rows: 100px 100px; }
+.sectionPreview .galGrid > div { height: 100px; }
+.sectionPreview .sec { padding: 20px; }
+.sectionPreview .h1 { font-size: 26px; overflow-wrap: anywhere; }
+.sectionPreview .profile, .sectionPreview .kurs { grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); }
+.sectionPreview .fasil { grid-template-columns: minmax(0, 1fr); }
+.sectionPreview .barK { flex-basis: 120px; overflow-wrap: anywhere; }
+@container (max-width: 360px) {
+  .sectionPreview .barRow { flex-wrap: wrap; }
+  .sectionPreview .barK { flex-basis: 100%; }
+}
+
+.sectionPreview .aside { position: static; min-width: 0; }
+.sectionPreview .panel { max-height: none; }
+.sectionPreview .panelScroll { overflow: visible; }

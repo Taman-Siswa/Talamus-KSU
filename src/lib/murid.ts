@@ -1,6 +1,7 @@
 import { SCHOOL_COLORS, type School, type SchoolColor } from '@/data/types';
 import { MO, P, fmt, fmtR } from './dates';
-import { checklistOf, keyDatesOf } from './schools';
+import { schoolContact } from './school-contact';
+import { checklistOf, keyDatesOf, type ChecklistGroup } from './schools';
 
 /* Pure helpers for the student pages ("Murid v3"). Nothing here touches the stores. */
 
@@ -67,24 +68,35 @@ export const daftarLabel = (s: School): string => {
   return '±' + m(A, A.getFullYear() !== B.getFullYear()) + '–' + m(B, true);
 };
 
+/**
+ * Sort key for "Pendaftaran terdekat": registration open now first (closing soonest), then registration not yet open
+ * (opening soonest), then ended (most recent first). A school without a dated registration comes last.
+ */
+export function daftarRank(s: School, today: Date): number {
+  const p = s.phases.find(x => x.t === 'daftar' && x.s);
+  if (!p) return Infinity;
+  const open = P(p.s).valueOf(), close = P(p.e || p.s).valueOf(), now = today.valueOf();
+  if (now > close) return 1e15 + (now - close);
+  if (now >= open) return close - now;
+  return 1e13 + (open - now);
+}
+
 /** Sorotan under the school name; older records only have one-line "facts". */
 export const highlightsOf = (s: School) =>
   (s.highlights ?? (s.facts ?? []).map(t => ({ icon: 'spark' as const, t, d: '' }))).filter(h => h.t.trim());
 
 /** Fact table on the Tentang tab: the admin's rows that have a value. Older records build it from their info. */
 export function profileRows(s: School): { k: string; v: string }[] {
-  if (s.profile) return s.profile.filter(r => r.k.trim() && r.v.trim());
+  if (s.profile) return schoolContact(s).profile.filter(r => r.k.trim() && r.v.trim());
   const i = s.info;
   return [
     { k: 'STATUS', v: i.kind },
     { k: 'BERDIRI', v: i.founded || '' },
     { k: 'LOKASI', v: [i.city, i.province].filter(Boolean).join(', ') + ((i.campusCount ?? 0) > 1 ? ` · ${i.campusCount} kampus` : '') },
-    { k: 'ALAMAT', v: i.address || '' },
     { k: 'SISTEM', v: i.boarding },
     { k: 'KUOTA', v: i.quotas?.length ? i.quotas.map(q => `${q.year}: ${q.seats}`).join(' · ') : i.quota || '' },
     { k: 'SISTEM PENERIMAAN', v: i.admissionSystem || '' },
     { k: 'TAHUN AJARAN', v: i.admissionYear ? i.admissionYear.replace('-', '/') : '' },
-    { k: 'KONTAK', v: [i.phone, i.email, i.website, i.contact].filter(Boolean).join(' · ') },
   ].filter(r => r.v);
 }
 
@@ -92,8 +104,8 @@ export const costText = (s: School) =>
   s.cost?.long || (s.info.funding.length ? 'Biaya: ' + s.info.funding.join(' · ') + '.' : '');
 
 /** Checklist progress of one school. */
-export function progressOf(s: School, checks: Record<string, boolean>) {
-  const list = checklistOf(s);
+export function progressOf(s: School, checks: Record<string, boolean>, group?: ChecklistGroup) {
+  const list = checklistOf(s, group);
   const total = list.length;
   const done = list.filter(c => checks[s.id + '.' + c.id]).length;
   return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
@@ -141,7 +153,7 @@ export function evalEligibility(
   if (rule) {
     if (!dob) out.push({ l: 'Usia', st: '?', note: 'Isi tanggal lahir.' });
     else {
-      const b = new Date(dob), at = new Date(rule.at);
+      const b = P(dob), at = P(rule.at);
       let age = at.getFullYear() - b.getFullYear();
       if (at < new Date(at.getFullYear(), b.getMonth(), b.getDate())) age--;
       out.push({ l: 'Usia', st: age <= rule.max ? 'ok' : 'x', note: `Usia ${age} tahun per ${fmt(at, true)} (maks. ${rule.max}).` });

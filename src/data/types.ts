@@ -21,6 +21,8 @@ export interface ChecklistItem {
   /** Present for a required document; absent for an ordinary preparation task. */
   document?: {
     required: boolean;
+    /** Empty/absent means common documents for all admission routes. */
+    category?: string;
     rules: { format: string; maxMB: string }[];
     template: string;
   };

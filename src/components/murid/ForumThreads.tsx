@@ -20,7 +20,8 @@ const SORTS: { key: ForumSort; label: string; icon: IconName }[] = [
 const stamp = () => Date.now();
 
 /** Composer, sort chips and the question list. `filter` is a school id, or 'all'. */
-export default function ForumThreads({ schools, filter, preview = false }: { schools: School[]; filter: string; preview?: boolean }) {
+export default function ForumThreads({ schools, filter, preview = false, faqOnly = false }: { schools: School[]; filter: string; preview?: boolean; faqOnly?: boolean }) {
+  const focused = preview && faqOnly;
   const user = useCurrentUser();
   const me = user?.name || 'Kamu';
   const forum = useStore(s => s.forum);
@@ -33,7 +34,7 @@ export default function ForumThreads({ schools, filter, preview = false }: { sch
   const [replies, setReplies] = useState<Record<string, string>>({});
 
   const byId = new Map(schools.map(s => [s.id, s]));
-  const threads = forumThreads(schools, forum, filter, sort);
+  const threads = forumThreads(schools, preview ? { posts: [], replies: {}, votes: {} } : forum, filter, sort);
   const target = filter !== 'all' ? filter : postSchool || schools[0]?.id || '';
 
   const post = () => {
@@ -52,7 +53,7 @@ export default function ForumThreads({ schools, filter, preview = false }: { sch
 
   return (
     <>
-      <div className={css.composer}>
+      {!focused && <><div className={css.composer}>
         <div className={css.composerRow}>
           <span className={css.avatar}>{initials(me)}</span>
           <input className={css.composerInput} value={draft} placeholder="Apa yang ingin kamu tanyakan atau bagikan?"
@@ -85,10 +86,11 @@ export default function ForumThreads({ schools, filter, preview = false }: { sch
         ))}
       </div>
 
+      </>}
       <div className={css.list}>
         {threads.map(t => {
           const school = byId.get(t.sid)!;
-          const isOpen = !!open[t.id];
+          const isOpen = open[t.id] ?? focused;
           const n = t.answers.length;
           return (
             <div key={t.id} className={[css.thread, isOpen ? css.threadOpen : ''].join(' ')} {...sc(school)}>
@@ -132,19 +134,19 @@ export default function ForumThreads({ schools, filter, preview = false }: { sch
                       </div>
                     </div>
                   ))}
-                  <div className={css.reply}>
+                  {!focused && <div className={css.reply}>
                     <input className={css.replyInput} value={replies[t.id] || ''} placeholder="Tulis jawabanmu…" aria-label="Tulis jawaban" disabled={preview}
                       onChange={e => setReplies(r => ({ ...r, [t.id]: e.target.value }))}
                       onKeyDown={e => { if (e.key === 'Enter') reply(t.id); }} />
                     <button type="button" className={[css.send, css.replyBtn].join(' ')} disabled={preview || !(replies[t.id] || '').trim()} onClick={() => reply(t.id)}>Kirim jawaban</button>
-                  </div>
+                  </div>}
                 </div>
               )}
             </div>
           );
         })}
       </div>
-      {threads.length === 0 && <div className={css.empty}>Belum ada diskusi di sini. Jadi yang pertama bertanya!</div>}
+      {!preview && threads.length === 0 && <div className={css.empty}>{focused ? 'Belum ada FAQ.' : 'Belum ada diskusi di sini. Jadi yang pertama bertanya!'}</div>}
     </>
   );
 }

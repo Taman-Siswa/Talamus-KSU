@@ -8,12 +8,14 @@ interface KatalogFilter {
   asr: string;
   /** 'all' | 'gratis' | 'bayar' */
   biaya: string;
+  /** 'all' (the order the admin keeps) | 'az' | 'daftar' */
+  sort: string;
   q: string;
   qOpen: boolean;
   set: (patch: Partial<Omit<KatalogFilter, 'set'>>) => void;
 }
 
 export const useKatalogFilter = create<KatalogFilter>(set => ({
-  lok: 'all', asr: 'all', biaya: 'all', q: '', qOpen: false,
+  lok: 'all', asr: 'all', biaya: 'all', sort: 'all', q: '', qOpen: false,
   set: patch => set(patch),
 }));

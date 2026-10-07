@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ensureAdminSeed, homeFor, roleOf, useAuth, useCurrentUser, type Role } from '@/lib/auth';
 import { trackPath } from '@/lib/nav';
-import { useSchoolsStore } from '@/lib/schools';
+import { pageTitle } from '@/lib/page-title';
+import { useSchools, useSchoolsStore } from '@/lib/schools';
 import { activateUser, useStore } from '@/lib/store';
 import { initials } from '@/data/student';
 import Icon, { type IconName } from './Icon';
@@ -84,6 +85,18 @@ export default function Shell({ children }: { children: ReactNode }) {
   // Route guard: signed-out users only see the auth pages, and each role stays on its own side.
   const wrongSide = !!session && !SHARED_PAGES.includes(pathname) && role !== 'admin' && isAdminPath(pathname);
   const previewing = role === 'admin' && isStudentPath(pathname);
+  // The tab title follows the page (and the school, for a school's own pages). Next applies its own title a moment
+  // after a full page load, so the title is kept until the page changes.
+  const schools = useSchools();
+  const tabTitle = isAuthPage ? null : pageTitle(pathname, schools);
+  useEffect(() => {
+    if (!tabTitle) return;
+    document.title = tabTitle;
+    const keep = new MutationObserver(() => { if (document.title !== tabTitle) document.title = tabTitle; });
+    keep.observe(document.head, { subtree: true, childList: true, characterData: true });
+    return () => keep.disconnect();
+  }, [tabTitle]);
+
   useEffect(() => {
     if (!authHydrated) return;
     if (!session) {
