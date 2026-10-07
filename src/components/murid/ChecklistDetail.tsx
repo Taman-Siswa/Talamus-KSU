@@ -17,7 +17,7 @@ import { STORY_KEYS } from './fit';
 import css from './checklist.module.css';
 import ui from './murid.module.css';
 
-type Tab = 'admin' | 'non';
+type Tab = 'berkas' | 'pendaftaran' | 'non';
 
 /** One saved school's checklist: administrative items, the TAMAN Fit Check, and the side cards. */
 export default function ChecklistDetail() {
@@ -39,7 +39,7 @@ export default function ChecklistDetail() {
 }
 
 function Detail({ school: S }: { school: School }) {
-  const [tab, setTab] = useState<Tab>('admin');
+  const [tab, setTab] = useState<Tab>('berkas');
   const [cek, setCek] = useState(false);
   const checks = useStore(s => s.checks);
   const fit = useStore(s => s.fit[S.id]) ?? {};
@@ -47,13 +47,19 @@ function Detail({ school: S }: { school: School }) {
 
   // "#non" (from the Ceritaku note on the picker) opens the non-administrative tab.
   useEffect(() => {
-    const sync = () => { if (location.hash === '#non') setTab('non'); };
+    const sync = () => {
+      const hash = location.hash.slice(1);
+      setTab(hash === 'non' || hash === 'pendaftaran' ? hash : 'berkas');
+    };
     sync();
     window.addEventListener('hashchange', sync);
     return () => window.removeEventListener('hashchange', sync);
   }, []);
 
-  const { done, total, pct: pA } = progressOf(S, checks);
+  const { pct: pA } = progressOf(S, checks);
+  const berkas = progressOf(S, checks, 'berkas');
+  const daftar = progressOf(S, checks, 'pendaftaran');
+  const goTab = (next: Tab) => { setTab(next); history.replaceState(null, '', '#' + next); };
   const scored = (fit.me ?? []).filter(x => x > 0).length;
   const nDone = scored
     + [0, 1, 2, 3, 4].filter(i => (fit.qual?.[i] ?? '').trim()).length
@@ -63,13 +69,14 @@ function Detail({ school: S }: { school: School }) {
   const bars: { k: 'syarat' | Tab; l: string; c: string; pct: number; bar: string }[] = [
     { k: 'syarat', l: 'Cek Syarat', c: eligDone ? 'Sudah dicek' : 'Belum dicek', pct: pE, bar: '#9A6B00' },
     { k: 'non', l: 'Non-Administratif', c: nDone + '/17 isian', pct: pN, bar: '#2E7CB8' },
-    { k: 'admin', l: 'Administratif', c: done + '/' + total + ' dokumen', pct: pA, bar: '#2D6327' },
+    { k: 'berkas', l: 'Kesiapan berkas', c: berkas.done + '/' + berkas.total + ' berkas', pct: berkas.pct, bar: '#2D6327' },
+    { k: 'pendaftaran', l: 'Pendaftaran & seleksi', c: daftar.done + '/' + daftar.total + ' langkah', pct: daftar.pct, bar: '#9A6B00' },
   ];
 
   const today = startOfToday();
   const up = upcomingOf(S, today);
   const remCls = !up ? css.remChip : up.days <= 14 ? css.remWarn : css.remAmb;
-  const tabs: [Tab, string, string][] = [['non', 'Non-Administratif', scored + '/5'], ['admin', 'Administratif', done + '/' + total]];
+  const tabs: [Tab, string, string][] = [['berkas', 'Berkas', berkas.done + '/' + berkas.total], ['pendaftaran', 'Pendaftaran', daftar.done + '/' + daftar.total], ['non', 'Non-Administratif', scored + '/5']];
 
   return (
     <div className={css.detail} {...sc(S)}>
@@ -81,13 +88,13 @@ function Detail({ school: S }: { school: School }) {
           <div className={css.seg} role="tablist">
             {tabs.map(([k, l, c]) => (
               <button key={k} type="button" role="tab" aria-selected={tab === k} className={[css.segBtn, tab === k ? css.segOn : ''].join(' ')}
-                onClick={() => { setTab(k); history.replaceState(null, '', k === 'non' ? '#non' : location.pathname); }}>
+                onClick={() => goTab(k)}>
                 {l}<span className={css.segCount}>{c}</span>
               </button>
             ))}
           </div>
         </div>
-        {tab === 'admin' ? <ChecklistCard school={S} /> : <FitCheck school={S} />}
+        {tab === 'non' ? <FitCheck school={S} /> : <ChecklistCard school={S} group={tab} />}
       </div>
 
       <div className={css.right}>
@@ -104,7 +111,7 @@ function Detail({ school: S }: { school: School }) {
             <span className={css.sideTotal}>{Math.round((pE + pN + pA) / 3)}%</span>
           </div>
           {bars.map(b => (
-            <button key={b.k} type="button" className={css.pg} onClick={() => (b.k === 'syarat' ? setCek(true) : setTab(b.k))}>
+            <button key={b.k} type="button" className={css.pg} onClick={() => (b.k === 'syarat' ? setCek(true) : goTab(b.k))}>
               <div className={css.pgHead}><span>{b.l}</span><span>{b.c} · <strong>{b.pct}%</strong></span></div>
               <div className={css.pgBar}><div className={css.pgFill} style={{ width: b.pct + '%', background: b.bar }} /></div>
             </button>

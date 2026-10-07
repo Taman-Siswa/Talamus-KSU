@@ -1,6 +1,7 @@
 import type { ReqCategory, Requirement, School } from '../data/types';
 import { P, fmt } from './dates';
 import { profileRows } from './murid';
+import { schoolContact } from './school-contact';
 
 export const REQUIREMENT_GROUPS = [
   { value: 'utama', label: 'Syarat utama' },
@@ -46,31 +47,24 @@ export const schoolMonogram = (short: string) => {
   return (words.length > 1 ? words.slice(0, 3).map(w => w[0]).join('') : (words[0] || '').slice(0, 3)).toUpperCase();
 };
 const firstLine = (t: string) => t.split('\n')[0].trim();
-const listJoin = (a: string[]) => (a.length > 1 ? a.slice(0, -1).join(', ') + ' dan ' + a[a.length - 1] : a[0] || '');
-/** The requirement lines behind Cek syarat. Empty until the fields are filled. */
-export const gradeText = (c: School['calc']) => (c && c.subjects.length && c.minAvg > 0 ? `Rata-rata nilai rapor ${listJoin(c.subjects)} minimal ${c.minAvg}` : '');
-export const ageText = (d?: { max: number; at: string }) => (d && d.max > 0 && /^\d{4}-\d{2}-\d{2}$/.test(d.at) ? `Usia maksimal ${d.max} tahun per ${fmt(P(d.at), true)}` : '');
-export const ageQuestion = (d: { max: number; at: string }) => (ageText(d) ? `Tanggal lahir (maks. ${d.max} tahun per ${fmt(P(d.at), true)})` : 'Tanggal lahir');
+const ageText = (d?: { max: number; at: string }) => (d && d.max > 0 && /^\d{4}-\d{2}-\d{2}$/.test(d.at) ? `Usia maksimal ${d.max} tahun per ${fmt(P(d.at), true)}` : '');
 
 /**
- * Derived fields are regenerated on every edit. Cek syarat is not a second form: the grade rule, the age rule and
- * the yes/no questions all come from the requirement rows (`kind` / `check`), so a rule is written once.
+ * Derived labels follow the identity fields. Cek Syarat has its own section, so its calculator and questions are
+ * retained independently from the public requirement list.
  */
 export function automaticSchoolLabels(s: School): School {
-  const items = s.reqs.filter(r => r.check && !r.kind && r.id && r.v.trim()).map(r => ({ id: r.id!, q: firstLine(r.v) }));
-  const dob = s.reqs.some(r => r.kind === 'usia') ? s.eligibility?.dob : undefined;
   return {
     ...s,
     short: schoolShortName(s.name),
     pill: [s.info.kind, s.info.boarding, s.info.province].filter(Boolean).join(' · '),
-    calc: s.reqs.some(r => r.kind === 'nilai') ? s.calc : null,
-    eligibility: items.length || dob ? { dob, items } : undefined,
+    calc: s.calc,
+    eligibility: s.eligibility ? { items: s.eligibility.items } : undefined,
   };
 }
 
-/** Records saved with a separate Cek syarat get a requirement row for each of its rules, so nothing is lost or hidden. */
+/** Older Cek Syarat rules are kept, while its previous date-of-birth rule becomes a simple yes/no question. */
 function adoptChecks(s: School): School {
-  const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const reqs = s.reqs.map(r => {
     const spec = r.cat ? REQ_DETAIL[r.cat] : undefined;
     const extra = spec ? spec.fields.filter(([k]) => r.det?.[k]?.trim()).map(([k, label, , type]) => `${label}: ${type === 'date' ? fmt(P(r.det![k]), true) : r.det![k]}`) : [];
@@ -78,22 +72,13 @@ function adoptChecks(s: School): School {
     void det;
     return { ...rest, group: requirementGroup(r), v: extra.length ? [r.v, ...extra].join('\n') : r.v };
   });
-  (s.eligibility?.items ?? []).forEach(it => {
-    if (reqs.some(r => r.id === it.id)) return; // already a row
-    const hit = reqs.find(r => !r.kind && !r.check && norm(firstLine(r.v)) === norm(it.q));
-    if (hit) { hit.check = true; hit.id = it.id; } else reqs.push({ group: 'utama', k: requirementTitle(it.q), v: it.q, check: true, id: it.id });
+  const items = [...(s.eligibility?.items ?? [])];
+  reqs.filter(r => r.check && !r.kind && r.id && r.v.trim()).forEach(r => {
+    if (!items.some(item => item.id === r.id)) items.push({ id: r.id!, q: firstLine(r.v) });
   });
-  let dob = s.eligibility?.dob;
-  if (s.calc && !reqs.some(r => r.kind === 'nilai')) {
-    const hit = reqs.find(r => !r.kind && !r.check && /nilai|rapor|rata-rata/i.test(r.v));
-    if (hit) hit.kind = 'nilai'; else reqs.push({ group: 'akademis', k: requirementTitle(gradeText(s.calc)), v: gradeText(s.calc), kind: 'nilai' });
-  }
-  if (dob && !reqs.some(r => r.kind === 'usia')) {
-    const hit = reqs.find(r => !r.kind && !r.check && /usia|umur/i.test(r.v));
-    if (hit) hit.kind = 'usia'; else reqs.push({ group: 'utama', k: requirementTitle(ageText(dob)), v: ageText(dob), kind: 'usia' });
-  }
-  if (dob) dob = { ...dob, q: ageQuestion(dob) };
-  return { ...s, reqs, eligibility: s.eligibility ? { ...s.eligibility, dob } : undefined };
+  const legacyAge = ageText(s.eligibility?.dob);
+  if (legacyAge && !items.some(item => item.id === 'legacy-age')) items.push({ id: 'legacy-age', q: legacyAge });
+  return { ...s, reqs, eligibility: items.length ? { items } : undefined };
 }
 
 /**
@@ -103,14 +88,14 @@ function adoptChecks(s: School): School {
  */
 export function toFormShape(s: School): School {
   const { facts, sub, ...rest } = s;
-  const { kind, province, city, campusCount, boarding, curriculum, funding, admissionYear } = s.info;
+  const { info } = schoolContact(s);
   return automaticSchoolLabels(adoptChecks({
     ...rest,
     tag: sub || s.tag,
-    info: { kind, province, city, campusCount, boarding, curriculum, funding, admissionYear },
+    info,
     highlights: s.highlights ?? (facts ?? []).filter(t => t.trim()).map(t => ({ icon: 'spark', t, d: '' })),
     about: s.about ?? '',
-    profile: s.profile ?? profileRows(s),
+    profile: profileRows(s),
     cost: s.cost?.long ? { long: s.cost.long } : undefined,
   }));
 }
@@ -159,7 +144,7 @@ export function schoolProblems(s: School): string[] {
     const keys = (c.f || []).map(f => f.k.trim());
     if (keys.some(k => !k) || new Set(keys).size !== keys.length) errors.push(label + ': kode kolom siswa harus terisi dan unik');
   });
-  s.reqs.forEach((r, i) => { need(r.k, `Nama syarat ${i + 1}`); need(r.v, `Deskripsi syarat ${i + 1}`); });
+  s.reqs.forEach((r, i) => { need(r.v.trim() || r.k.trim(), `Isi syarat ${i + 1}`); });
   s.faq.forEach((f, i) => { need(f.q, `Pertanyaan FAQ ${i + 1}`); need(f.a, `Jawaban FAQ ${i + 1}`); });
   s.docs.forEach((d, i) => {
     need(d.l, `Judul referensi ${i + 1}`);

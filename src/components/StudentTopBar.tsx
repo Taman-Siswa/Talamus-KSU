@@ -39,6 +39,7 @@ function KatalogFilters({ onPick }: { onPick: () => void }) {
       {select('Lokasi', f.lok, [['all', 'Lokasi'], ...provinces.map(p => [p, p] as [string, string])], v => pick({ lok: v }))}
       {select('Asrama', f.asr, [['all', 'Asrama'], ['ya', 'Berasrama'], ['tidak', 'Tanpa asrama']], v => pick({ asr: v }))}
       {select('Biaya', f.biaya, [['all', 'Biaya'], ['gratis', 'Gratis'], ['bayar', 'Berbayar']], v => pick({ biaya: v }))}
+      {select('Urutkan', f.sort, [['all', 'Urutkan'], ['daftar', 'Pendaftaran terdekat'], ['az', 'Nama A–Z']], v => pick({ sort: v }))}
       <div className={css.search}>
         {f.qOpen && (
           <input autoFocus value={f.q} placeholder="Cari nama sekolah…" aria-label="Cari nama sekolah"

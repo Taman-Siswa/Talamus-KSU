@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import type { Requirement, School } from '@/data/types';
 import { P, dlLabel, fmt } from '@/lib/dates';
+import { contactRows } from '@/lib/school-contact';
 import { costText, daftarLabel, highlightsOf, locationLabel, monthLabel, profileRows, sc, stars } from '@/lib/murid';
 import { REQUIREMENT_GROUPS, isWebUrl, requirementGroup } from '@/lib/school-form';
 import { useStore } from '@/lib/store';
@@ -34,7 +35,14 @@ function Accordion({ title, badge, open, onToggle, children }: {
 }
 
 /** A school's page: gallery, highlights, tabs (Tentang, Fasilitas, Alumni & Prestasi, Ulasan) and the registration panel. */
-export default function SchoolProfile({ school: S, preview = false }: { school: School; preview?: boolean }) {
+export default function SchoolProfile({ school: S, preview = false, previewSection }: { school: School; preview?: boolean; previewSection?: 'informasi' | 'fasilitas' | 'alumni' | 'ulasan' | 'pendaftaran' | 'syarat' }) {
+  const focused = preview && !!previewSection;
+  const showInfo = !focused || previewSection === 'informasi';
+  const showRegistration = !focused || previewSection === 'pendaftaran';
+  // The registration card contains both the requirements and the schedule. The dedicated
+  // requirements preview still shows only its own section, while the registration preview
+  // keeps the student-facing order: cost, requirements, timeline, documents.
+  const showRequirements = !focused || previewSection === 'syarat' || previewSection === 'pendaftaran';
   const uid = useId().replace(/:/g, '');
   const secId = (k: string) => `sec-${uid}-${k}`;
   const on = useStore(s => !!s.sel[S.id]);
@@ -83,27 +91,27 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
   const statusLabel = resmi ? 'Info resmi sudah rilis' : 'Info belum rilis — pakai data tahun lalu';
   const bannerPts = (S.banner || '').split(/\.\s+/).map(x => x.trim()).filter(Boolean).map(x => (/[.!?]$/.test(x) ? x : x + '.'));
   const cost = costText(S);
-  const toggle = (k: string) => setAcc(a => ({ ...a, [k]: !a[k] }));
-  const docs = S.checklist.filter(c => c.document);
+  const toggle = (k: string) => setAcc(a => ({ ...a, [k]: !(a[k] ?? focused) }));
   const grouped = REQUIREMENT_GROUPS.map(g => ({ g, rows: S.reqs.filter((r: Requirement) => requirementGroup(r) === g.value) })).filter(x => x.rows.length);
 
   return (
-    <div className={css.page} {...sc(S)}>
-      <div className={css.top}>
+    <div className={[css.page, focused ? css.sectionPreview : ''].join(' ')} {...sc(S)}>
+      {!focused && <div className={css.top}>
         {!preview && <Link href="/katalog" className={css.back} title="Kembali ke Katalog" aria-label="Kembali ke Katalog"><Icon name="arrowLeft" size={16} stroke={2} /></Link>}
         <div className={css.grow} />
         <button type="button" className={[css.like, on ? css.likeOn : ''].join(' ')} disabled={preview} aria-pressed={on} onClick={() => toggleSel(S.id)}>
           <Icon name="heart" size={17} stroke={1.8} fill={on} />{on ? 'Disukai' : 'Suka'}
         </button>
-      </div>
+      </div>}
 
-      <div className={css.gallery}>
+      {showInfo && <div className={css.gallery}>
         <div className={css.galMain}><PhotoTile school={S} index={0} size={30} /></div>
         <div className={css.galGrid}>{[1, 2, 3, 4].map(i => <PhotoTile key={i} school={S} index={i} size={30} />)}</div>
-      </div>
+      </div>}
 
       <div className={css.cols}>
         <div className={css.main}>
+          {showInfo && <>
           <h1 className={css.h1}>{S.name}</h1>
           {locationLabel(S) && <div className={css.meta}>{locationLabel(S)}</div>}
           {hls.length > 0 && (
@@ -120,21 +128,30 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
             </>
           )}
 
-          {shown.length > 1 && <div className={css.tabs} role="tablist">
+          {!focused && shown.length > 1 && <div className={css.tabs} role="tablist">
             {shown.map(([k, label]) => (
               <button key={k} type="button" role="tab" aria-selected={tab === k} className={[css.tab, tab === k ? css.tabOn : ''].join(' ')} onClick={() => goTab(k)}>{label}</button>
             ))}
           </div>}
-          {shown.length <= 1 && <div className={css.tabsGap} />}
+          {(focused || shown.length <= 1) && <div className={css.tabsGap} />}
 
           <section id={secId('tentang')} className={css.sec}>
             <h3 className={css.secTitle}>Tentang sekolah</h3>
-            {about ? <p className={css.about}>{about}</p> : <p className={css.empty}>Belum ada deskripsi sekolah.</p>}
+            {about ? <p className={css.about}>{about}</p> : !preview && <p className={css.empty}>Belum ada deskripsi sekolah.</p>}
             {profile.length > 0 && (
               <div className={css.profile}>
                 {profile.map(r => <div key={r.k}><div className={css.pk}>{r.k}</div><div className={css.pv}>{r.v}</div></div>)}
               </div>
             )}
+            <div className={css.sub}>Kontak & alamat</div>
+            <div className={css.profile}>
+              {contactRows(S).map(r => <div key={r.k}>
+                <div className={css.pk}>{r.k}</div>
+                <div className={css.pv} style={{ overflowWrap: 'anywhere' }}>
+                  {r.href ? <a href={r.href} target={r.k === 'Website' ? '_blank' : undefined} rel={r.k === 'Website' ? 'noopener noreferrer' : undefined}>{r.v}</a> : r.v || 'Belum tersedia'}
+                </div>
+              </div>)}
+            </div>
             {kurs.length > 0 && (
               <>
                 <div className={css.sub}>Kurikulum</div>
@@ -150,19 +167,21 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
             )}
           </section>
 
-          {has.fasilitas && (
+          </>}
+
+          {(!focused && has.fasilitas || focused && previewSection === 'fasilitas') && (
           <section id={secId('fasilitas')} className={css.sec}>
             <h3 className={css.secTitle}>Fasilitas sekolah</h3>
             {S.facilities?.length
               ? <div className={css.fasil}>{S.facilities.map(f => <div key={f.t} className={css.fas}><Icon name={f.icon} size={24} stroke={1.5} />{f.t}</div>)}</div>
-              : <p className={css.empty}>Belum ada data fasilitas.</p>}
+              : !preview && <p className={css.empty}>Belum ada data fasilitas.</p>}
           </section>
           )}
 
-          {has.alumni && (
+          {(!focused && has.alumni || focused && previewSection === 'alumni') && (
           <section id={secId('alumni')} className={css.sec}>
             <h3 className={css.secTitle}>Alumni &amp; prestasi</h3>
-            {!alumni.length && !achievements.length && <p className={css.empty}>Belum ada data alumni dan prestasi.</p>}
+            {!preview && !alumni.length && !achievements.length && <p className={css.empty}>Belum ada data alumni dan prestasi.</p>}
             {alumni.length > 0 && (
               <>
                 <div className={css.lineHead}>
@@ -208,7 +227,7 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
           </section>
           )}
 
-          {has.ulasan && (
+          {(!focused && has.ulasan || focused && previewSection === 'ulasan') && (
           <section id={secId('ulasan')} className={css.sec}>
             <div className={css.rvHead}>
               <div className={css.rvTitle}>Ulasan alumni</div>
@@ -219,7 +238,7 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
                 </div>
               )}
             </div>
-            {reviews.length === 0 && <p className={css.empty} style={{ paddingTop: 16 }}>Belum ada ulasan alumni.</p>}
+            {!preview && reviews.length === 0 && <p className={css.empty} style={{ paddingTop: 16 }}>Belum ada ulasan alumni.</p>}
             {reviews.map(({ r, i }) => {
               const key = S.id + '.' + i, open = !!rvOpen[key], liked = !preview && !!rvLike[key];
               const paras = r.text.split(/\n{2,}/).filter(Boolean);
@@ -245,10 +264,10 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
           )}
         </div>
 
-        <aside className={css.aside}>
+        {(showRegistration || showRequirements) && <aside className={css.aside}>
           <div className={css.panel}>
             <div className={css.panelScroll}>
-              <div className={css.panelHead}>
+              {showRegistration && <div className={css.panelHead}>
                 <div className={css.panelLabel}>PENDAFTARAN</div>
                 <div className={css.infoWrap} onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}>
                   <button type="button" className={[css.infoBtn, resmi ? css.infoOk : css.infoAmb].join(' ')} aria-label="Status informasi" aria-expanded={tip} onClick={() => setTip(t => !t)}>i</button>
@@ -259,46 +278,32 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
                     </div>
                   )}
                 </div>
-              </div>
+              </div>}
               <div className={css.panelName}>{S.name}</div>
-              <div className={css.panelDaftar}>{daftarLabel(S)}</div>
-
-              <Accordion title="Biaya" open={!!acc.biaya} onToggle={() => toggle('biaya')}>
-                {cost ? <p className={css.accText}>{cost}</p> : <p className={css.empty}>Belum ada keterangan biaya.</p>}
-              </Accordion>
-              <Accordion title="Syarat" open={!!acc.syarat} onToggle={() => toggle('syarat')}>
-                {grouped.length === 0 && docs.length === 0 && <p className={css.empty}>Belum ada syarat.</p>}
+              {showRegistration && <div className={css.panelDaftar}>{daftarLabel(S)}</div>}
+              {showRegistration && <Accordion title="Biaya" open={acc.biaya ?? focused} onToggle={() => toggle('biaya')}>
+                {cost ? <p className={css.accText}>{cost}</p> : !preview && <p className={css.empty}>Belum ada keterangan biaya.</p>}
+              </Accordion>}
+              {showRequirements && <Accordion title="Syarat" open={acc.syarat ?? focused} onToggle={() => toggle('syarat')}>
+                {!preview && grouped.length === 0 && <p className={css.empty}>Belum ada syarat.</p>}
                 {grouped.map(({ g, rows }) => (
                   <div key={g.value}>
-                    {(grouped.length > 1 || docs.length > 0) && <div className={css.grpLabel}>{g.label}</div>}
+                    {grouped.length > 1 && <div className={css.grpLabel}>{g.label}</div>}
                     {rows.map((r, i) => {
-                      // A requirement typed as one sentence has a name that is just its own beginning: show the sentence once.
-                      const named = !!r.k.trim() && !r.v.trim().startsWith(r.k.trim());
+                      const title = r.k?.trim() || '';
+                      const body = r.v?.trim() || '';
+                      const named = !!title && !!body && title.toLowerCase() !== body.toLowerCase();
                       return (
                         <div key={i} className={css.req}>
                           {named && <div className={css.reqK}>{r.k}</div>}
-                          <div className={named ? css.reqV : css.reqK}>{r.v}</div>
+                          <div className={named ? css.reqV : css.reqK}>{r.v || r.k}</div>
                         </div>
                       );
                     })}
                   </div>
                 ))}
-                {docs.length > 0 && (
-                  <div>
-                    <div className={css.grpLabel}>Berkas yang disiapkan</div>
-                    {docs.map(c => (
-                      <div key={c.id} className={css.req}>
-                        <div className={css.reqK}>{c.l}</div>
-                        <div className={css.reqV}>
-                          {[c.document!.required ? 'Wajib' : 'Opsional', ...c.document!.rules.map(r => `${r.format} maks. ${r.maxMB} MB`), c.dl ? 'tenggat ' + dlLabel(c.dl, c.est) : ''].filter(Boolean).join(' · ')}
-                          {isWebUrl(c.document!.template) && <> · <a href={c.document!.template} target="_blank" rel="noopener noreferrer">Unduh template</a></>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Accordion>
-              <Accordion title="Timeline Pendaftaran" badge={S.phases.length ? tlBadge : undefined} open={!!acc.alur} onToggle={() => toggle('alur')}>
+              </Accordion>}
+              {showRegistration && <><Accordion title="Timeline Pendaftaran" badge={S.phases.length ? tlBadge : undefined} open={acc.alur ?? focused} onToggle={() => toggle('alur')}>
                 {S.phases.length === 0 && <p className={css.empty}>Jadwal belum diumumkan.</p>}
                 {S.phases.map((p, i) => (
                   <div key={i} className={css.step}>
@@ -315,8 +320,8 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
                   </div>
                 ))}
               </Accordion>
-              <Accordion title="Dokumen resmi & arsip" open={!!acc.dok} onToggle={() => toggle('dok')}>
-                {S.docs.length === 0 && <p className={css.empty}>Belum ada dokumen.</p>}
+              <Accordion title="Dokumen resmi & arsip" open={acc.dok ?? focused} onToggle={() => toggle('dok')}>
+                {!preview && S.docs.length === 0 && <p className={css.empty}>Belum ada dokumen.</p>}
                 {S.docs.map((d, i) => (
                   <div key={i} className={css.doc}>
                     <div className={css.docMain}><div className={css.docL}>{d.l}</div><div className={css.docM}>{d.m}</div></div>
@@ -324,9 +329,9 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
                     {isWebUrl(d.h) ? <a href={d.h} target="_blank" rel="noopener noreferrer" className={css.docOpen}>Buka</a> : <span className={css.docM}>Tautan belum valid</span>}
                   </div>
                 ))}
-              </Accordion>
+              </Accordion></>}
             </div>
-            <div className={css.ctas}>
+            {!focused && <div className={css.ctas}>
               <button type="button" className={[css.cta, css.ctaBlue].join(' ')} disabled={preview} onClick={() => setModal('cek')}>
                 <Icon name="calc" size={17} stroke={1.8} />Cek Syarat
               </button>
@@ -336,9 +341,9 @@ export default function SchoolProfile({ school: S, preview = false }: { school: 
               <button type="button" className={[css.cta, on ? css.ctaHeartOn : css.ctaHeart].join(' ')} disabled={preview} aria-pressed={on} onClick={() => toggleSel(S.id)}>
                 <Icon name="heart" size={17} stroke={1.8} fill={on} />{on ? 'Disimpan' : 'Simpan'}
               </button>
-            </div>
+            </div>}
           </div>
-        </aside>
+        </aside>}
       </div>
 
       {modal === 'cek' && <CekSyaratModal school={S} onClose={() => setModal(null)} />}

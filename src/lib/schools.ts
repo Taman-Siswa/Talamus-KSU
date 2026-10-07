@@ -109,8 +109,10 @@ export function timelineTasks(s: School): ChecklistItem[] {
 }
 
 /** What the student's checklist shows: the admin's berkas and tasks plus the timeline's, soonest deadline first. */
-export const checklistOf = (s: School): ChecklistItem[] =>
+export type ChecklistGroup = 'berkas' | 'pendaftaran';
+export const checklistOf = (s: School, group?: ChecklistGroup): ChecklistItem[] =>
   [...s.checklist, ...timelineTasks(s)]
+    .filter(c => !group || (group === 'berkas' ? !!c.document : !c.document))
     .map((c, i) => ({ c, i }))
     .sort((a, b) => (a.c.dl || '9999').localeCompare(b.c.dl || '9999') || a.i - b.i)
     .map(x => x.c);

@@ -34,7 +34,7 @@ export function Field({ label, note, required, group, className, children }: {
 
 /** Underlined text input. `strong` is the heavier style used for a school's name. */
 export function TextInput({ value, onChange, placeholder, type = 'text', maxLength, min, max, invalid, strong, medium, code, label, list }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; type?: 'text' | 'date' | 'month' | 'url' | 'number';
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: 'text' | 'tel' | 'email' | 'date' | 'month' | 'url' | 'number';
   maxLength?: number; min?: string; max?: string; invalid?: boolean; strong?: boolean;
   /** weight 500, for a row's main line (task title, question) */
   medium?: boolean;
@@ -204,10 +204,10 @@ export function RepeatList<T>({ items, onChange, blank, render, addLabel, rowLab
   /** more add buttons next to the main one, e.g. a row that comes with its own fields */
   extra?: ReactNode;
 }) {
+  void empty;
   const replace = (i: number, item: T) => onChange(items.map((x, j) => (j === i ? item : x)));
   return (
     <>
-      {items.length === 0 && empty ? <p className={css.empty}>{empty}</p> : null}
       {items.map((item, i) => (
         <div key={i} className={css.row}>
           <div className={css.rowHead}>
@@ -256,9 +256,11 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
  * One card of the editor. `status` is the completeness pill; a `collapsible` section folds away from its header,
  * open or closed as `open` says (the editor keeps that state so the pills above can open a section).
  */
-export function Section({ id, title, icon, status, collapsible, open = true, onToggle, children }: {
+export function Section({ id, title, icon, status, destination, collapsible, open = true, onToggle, livePreview, children }: {
   id: string; title: string; icon: Parameters<typeof Icon>[0]['name'];
   status?: { text: string; done: boolean };
+  destination?: string;
+  livePreview?: ReactNode;
   collapsible?: boolean; open?: boolean; onToggle?: () => void;
   children: ReactNode;
 }) {
@@ -275,7 +277,12 @@ export function Section({ id, title, icon, status, collapsible, open = true, onT
       {collapsible ? (
         <button type="button" className={cx(css.sectionHead, css.sectionToggle)} aria-expanded={open} onClick={onToggle}>{head}</button>
       ) : <div className={css.sectionHead}>{head}</div>}
-      {open ? <div className={css.sectionBody}>{children}</div> : null}
+      {open ? <div className={css.sectionBody}>{destination && <p className={css.subHelp}>Ditampilkan di: <strong>{destination}</strong></p>}{livePreview ? <div className={css.sectionFormLayout}>
+        <div className={css.sectionFormFields}>{children}</div>
+        <aside className={css.sectionLivePreview} aria-label={'Pratinjau ' + title}>
+          <div className={[css.sectionPreviewScroll, 'skin-murid'].join(' ')}>{livePreview}</div>
+        </aside>
+      </div> : children}</div> : null}
     </section>
   );
 }
@@ -295,6 +302,7 @@ export function LineList<T>({ items, onChange, blank, render, addLabel, empty, c
   /** column titles above the first line */
   head?: string[];
 }) {
+  void empty;
   const style = { '--cols': cols } as React.CSSProperties;
   return (
     <div className={css.lines}>
@@ -307,7 +315,6 @@ export function LineList<T>({ items, onChange, blank, render, addLabel, empty, c
           </span>
         </div>
       ))}
-      {items.length === 0 && empty ? <p className={css.empty}>{empty}</p> : null}
       <AddButton onClick={() => onChange([...items, blank()])}>{addLabel}</AddButton>
     </div>
   );

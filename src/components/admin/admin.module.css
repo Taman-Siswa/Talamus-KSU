@@ -53,6 +53,7 @@
   background: var(--card); border: 1px solid var(--hair-soft); border-radius: var(--r-lg);
   padding: 24px 28px; margin-bottom: 16px; box-shadow: var(--shadow-1); scroll-margin-top: 24px;
 }
+.subHelp { margin: 0 0 16px; color: var(--sub); font: 400 13px/1.6 var(--font-text); overflow-wrap: anywhere; }
 .sectionHead { display: flex; align-items: center; gap: 12px; }
 .sectionHead > svg:first-child { color: var(--accent); }
 .sectionToggle { width: 100%; background: transparent; border: 0; padding: 0; cursor: pointer; color: inherit; text-align: left; }
@@ -167,6 +168,15 @@
 .catGrey { background: var(--chip); color: var(--sub); }
 .catNone { background: var(--warn-bg); color: var(--warn-ink); }
 
+/* A requirement starts as one simple field. Its category and student-facing check stay together beneath it. */
+.requirementBody { margin-top: 6px; }
+.requirementOptions {
+  display: flex; align-items: end; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hair-soft);
+}
+.requirementCategory { flex: 1; }
+.requirementOptions .switchRow { padding-bottom: 0; }
+
 /* optional per-category detail under a requirement */
 .detToggle {
   display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 12px; padding: 4px 0;
@@ -204,6 +214,7 @@
   .fieldRow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
   .section { padding: 20px 16px; }
   .title { font-size: 28px; }
+  .requirementOptions { align-items: flex-start; }
 }
 
 .progressPill { text-decoration: none; }
@@ -260,3 +271,30 @@
 .drop:hover, .dropOver { border-color: var(--accent); background: var(--nav-sel); }
 .drop:disabled { cursor: progress; opacity: 0.7; }
 .fieldError { margin: 8px 0 0; font: 500 13px/1.4 var(--font-text); color: var(--danger); }
+
+/* Catalog fields and a live card share the school editor's draft. */
+.cardFormLayout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 28px; align-items: start; }
+.cardFormFields { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.cardFormPreview { position: sticky; top: 24px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.cardFormFields .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 1100px) {
+  .cardFormLayout { grid-template-columns: minmax(0, 1fr); }
+  .cardFormPreview { position: static; max-width: 460px; width: 100%; }
+}
+@media (max-width: 600px) { .cardFormFields .grid3 { grid-template-columns: minmax(0, 1fr); } }
+
+.sectionFormLayout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.sectionFormFields { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.sectionLivePreview { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.sectionPreviewScroll { max-height: calc(100dvh - 100px); overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.sectionFormFields .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.registrationSubsections { display: flex; flex-direction: column; gap: 20px; }
+.registrationSubsection { order: -1; padding-top: 24px; border-top: 1px solid var(--hair-soft); }
+@media (max-width: 1100px) {
+  .sectionFormLayout { grid-template-columns: minmax(0, 1fr); }
+  .sectionLivePreview { position: static; }
+  .sectionPreviewScroll { max-height: none; overflow: visible; }
+}
+@media (max-width: 600px) { .sectionFormFields .grid3 { grid-template-columns: minmax(0, 1fr); } }
+
+.sectionPreviewScroll > * + * { margin-top: 20px; }
